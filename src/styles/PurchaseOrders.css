@@ -1,6 +1,6 @@
 .purchase-orders-container {
   padding: 2rem;
-  background: #f8f9fa;
+  background: #f5f6f8;
   min-height: 100vh;
 }
 
@@ -8,123 +8,102 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 2rem;
-  flex-wrap: wrap;
-  gap: 1rem;
+  margin-bottom: 2.5rem;
+  gap: 2rem;
 }
 
 .header-title-section {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 1.5rem;
 }
 
 .header-title-section h1 {
-  font-size: 2rem;
-  font-weight: 600;
+  font-size: 2.5rem;
+  font-weight: 700;
   color: #1a1a2e;
   margin: 0;
 }
 
-.purchase-orders-header .badge {
-  font-size: 0.875rem;
-  padding: 0.5rem 1rem;
+.header-title-section .badge {
+  font-size: 1rem;
+  padding: 0.75rem 1.5rem;
+  border: 2px solid #0066cc;
+  background: white;
+  color: #0066cc;
+  border-radius: 25px;
+  font-weight: 600;
+}
+
+.purchase-orders-header .btn {
+  padding: 0.75rem 2rem;
+  font-weight: 600;
+  border-radius: 8px;
+  white-space: nowrap;
 }
 
 /* Stats Container */
 .stats-container {
-  margin-bottom: 2rem;
+  margin-bottom: 3rem;
 }
 
 .stat-card {
-  padding: 1.5rem;
-  border-radius: 0.5rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-  border-left: 4px solid;
-}
-
-.stat-card.bg-warning {
-  border-left-color: #ffc107;
-}
-
-.stat-card.bg-info {
-  border-left-color: #17a2b8;
-}
-
-.stat-card.bg-success {
-  border-left-color: #28a745;
-}
-
-.stat-card.bg-danger {
-  border-left-color: #dc3545;
-}
-
-.stat-header {
+  background: white;
+  padding: 1.75rem;
+  border-radius: 8px;
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  gap: 0.75rem;
-  margin-bottom: 0.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  transition: transform 0.2s, box-shadow 0.2s;
+  border: 1px solid #f0f0f0;
 }
 
-.stat-icon {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
+.stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.stat-content {
+  flex: 1;
+}
+
+.stat-title {
+  font-size: 0.95rem;
+  color: #999;
+  font-weight: 500;
+  margin: 0 0 0.5rem 0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.stat-value {
+  font-size: 2.2rem;
+  font-weight: 700;
+  color: #1a1a2e;
+  margin: 0;
+}
+
+.stat-icon-box {
+  width: 70px;
+  height: 70px;
+  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.25rem;
-  color: white;
-}
-
-.stat-card h6 {
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: #666;
-  margin: 0;
-}
-
-.stat-card h3 {
-  font-size: 1.75rem;
-  font-weight: 600;
-  color: #1a1a2e;
-  margin: 0;
+  font-size: 2rem;
+  color: #0066cc;
+  border: 2px solid #e8f0ff;
+  background: #f8fbff;
 }
 
 /* Table Container */
 .table-container {
   background: white;
-  border-radius: 0.5rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-  padding: 1.5rem;
-}
-
-.table-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1.5rem;
-  flex-wrap: wrap;
-  gap: 1rem;
-}
-
-.table-header h5 {
-  font-size: 1.125rem;
-  font-weight: 600;
-  color: #1a1a2e;
-  margin: 0;
-}
-
-.table-controls {
-  display: flex;
-  gap: 1rem;
-  flex-wrap: wrap;
-}
-
-.table-controls .form-control,
-.table-controls .form-select {
-  font-size: 0.875rem;
-  border-color: #ddd;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+  border: 1px solid #f0f0f0;
 }
 
 .table-responsive {
@@ -133,76 +112,62 @@
 
 .table {
   margin-bottom: 0;
-  font-size: 0.9375rem;
+  font-size: 1rem;
 }
 
 .table thead th {
-  background-color: #f8f9fa;
-  border-top: none;
-  border-bottom: 2px solid #ddd;
+  background-color: #f9fafb;
+  border-bottom: 2px solid #e5e7eb;
   font-weight: 600;
-  color: #666;
-  font-size: 0.875rem;
-  padding: 1rem 0.75rem;
+  color: #6b7280;
+  font-size: 0.95rem;
+  padding: 1.25rem;
+  text-align: left;
+  letter-spacing: 0.5px;
 }
 
 .table tbody td {
-  padding: 1rem 0.75rem;
-  border-color: #eee;
+  padding: 1.25rem;
+  border-color: #f3f4f6;
   vertical-align: middle;
-}
-
-.table tbody tr:hover {
-  background-color: #f8f9fa;
-}
-
-.badge {
-  font-size: 0.75rem;
-  padding: 0.35rem 0.6rem;
+  color: #4b5563;
   font-weight: 500;
 }
 
-.btn-sm {
-  font-size: 0.8125rem;
-  padding: 0.4rem 0.8rem;
+.table tbody tr {
+  border-bottom: 1px solid #f3f4f6;
 }
 
-/* Table Footer */
-.table-footer {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: 1.5rem;
-  padding-top: 1rem;
-  border-top: 1px solid #eee;
-  flex-wrap: wrap;
-  gap: 1rem;
+.table tbody tr:last-child {
+  border-bottom: none;
 }
 
-.table-footer span {
-  color: #666;
-  font-size: 0.875rem;
+.table tbody tr:hover {
+  background-color: #f9fafb;
 }
 
-.pagination {
-  margin: 0;
+.po-id {
+  font-weight: 700;
+  color: #1a1a2e;
 }
 
-.pagination .page-link {
-  padding: 0.4rem 0.75rem;
-  font-size: 0.875rem;
-  border-radius: 0.25rem;
-  color: #0066cc;
+.supplier {
+  color: #6b7280;
 }
 
-.pagination .page-link:hover {
-  color: #0052a3;
-  background-color: #f8f9fa;
+.product {
+  color: #6b7280;
 }
 
-.pagination .page-item.active .page-link {
-  background-color: #0066cc;
-  border-color: #0066cc;
+.date {
+  color: #999;
+  font-size: 0.95rem;
+}
+
+.price {
+  font-weight: 700;
+  color: #1a1a2e;
+  font-size: 1.05rem;
 }
 
 /* Responsive */
@@ -214,44 +179,44 @@
   .purchase-orders-header {
     flex-direction: column;
     align-items: flex-start;
+    gap: 1rem;
   }
 
   .header-title-section {
     flex-direction: column;
     align-items: flex-start;
+    gap: 0.75rem;
   }
 
   .header-title-section h1 {
+    font-size: 1.75rem;
+  }
+
+  .stat-card {
+    flex-direction: column;
+    text-align: center;
+    gap: 1rem;
+  }
+
+  .stat-icon-box {
+    width: 50px;
+    height: 50px;
     font-size: 1.5rem;
   }
 
-  .table-container {
-    padding: 1rem;
-  }
-
-  .table-controls {
-    flex-direction: column;
-    width: 100%;
-  }
-
-  .table-controls .form-control,
-  .table-controls .form-select {
-    width: 100%;
+  .stat-value {
+    font-size: 1.75rem;
   }
 
   .table {
-    font-size: 0.8125rem;
+    font-size: 0.875rem;
   }
 
   .table thead th {
-    padding: 0.75rem 0.5rem;
+    padding: 0.75rem;
   }
 
   .table tbody td {
-    padding: 0.75rem 0.5rem;
-  }
-
-  .stat-card h3 {
-    font-size: 1.5rem;
+    padding: 0.75rem;
   }
 }

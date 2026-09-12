@@ -7,7 +7,7 @@ A modern, responsive Purchase Orders management interface built with React and B
 - **Purchase Orders Dashboard** - View and manage all purchase orders
 - **Status Tracking** - Track orders with multiple status types (Pending Approval, In Transit, Delivered)
 - **Analytics Cards** - Quick metrics for pending approvals, transit orders, and spending
-- **Data Table** - Comprehensive list of purchase orders with search and filtering
+- **Data Table** - Comprehensive list of purchase orders with search and filtering.
 - **Responsive Design** - Works seamlessly on desktop, tablet, and mobile devices
 - **Modern UI** - Built with Bootstrap 5 and custom styling
 

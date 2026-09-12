@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import '../styles/PurchaseOrders.css';
 
+
 const PurchaseOrders = () => {
   const [purchaseOrders, setPurchaseOrders] = useState([
     { id: 'PO-3400', supplier: 'Medico Supplies', product: 'Medications', date: '2024-09-12', status: 'Delivered' },

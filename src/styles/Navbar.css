@@ -1,14 +1,16 @@
+```css
 .navbar-top {
   background: white;
-  border-bottom: 1px solid #eee;
-  padding: 0;
-  height: 70px;
+  border-bottom: 1px solid #817a7a;
+  height: 60px;
+  width: 100%;
   display: flex;
   align-items: center;
   position: sticky;
   top: 0;
+  border: 1px solid #615b5b;
   z-index: 100;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 1px 3px rgba(167, 163, 163, 0.05);
 }
 
 .navbar-content {
@@ -119,3 +121,4 @@
     height: 35px;
   }
 }
+

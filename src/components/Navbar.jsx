@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import '../styles/Navbar.css';
 
-const Navbar = ({ onToggleSidebar }) => {
+const Navbar = ({ onToggleSidebar }) => { 
   return (
+    
     <nav className="navbar-top">
       <div className="navbar-content">
         <button className="navbar-toggle" onClick={onToggleSidebar}>
@@ -36,5 +37,4 @@ const Navbar = ({ onToggleSidebar }) => {
     </nav>
   );
 };
-
 export default Navbar;

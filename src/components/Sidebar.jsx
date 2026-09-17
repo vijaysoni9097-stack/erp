@@ -1,49 +1,162 @@
-import React from 'react';
-import '../styles/Sidebar.css';
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import "../styles/Sidebar.css";
 
-const Sidebar = ({ isOpen }) => {
+function Sidebar() {
+  const [inventoryOpen, setInventoryOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+
+  const navigate = useNavigate();
+
   return (
-    <aside className={`sidebar ${isOpen ? 'open' : ''}`}>
-      <div className="sidebar-logo">
-        <h3>Preclinic</h3>
-      </div>
+    <div className="sidebar">
+
+      <h4 className="menu-head">Main menu</h4>
+
+      <button className="sidebar-button" onClick={() => navigate('/dashboard')}>
+        Dashboard
+      </button>
+
+      <br />
+
+      <button className="sidebar-button" onClick={() => navigate('/machines')}>
+        Medicines
+      </button>
+
+      <br />
+
       
-      <nav className="sidebar-nav">
-        <ul>
-          <li>
-            <a href="#dashboard" className="nav-link">
-              <i className="fas fa-chart-pie"></i>
-              <span>Dashboard</span>
-            </a>
-          </li>
-          <li>
-            <a href="#purchase-orders" className="nav-link active">
-              <i className="fas fa-shopping-cart"></i>
-              <span>Purchase Orders</span>
-            </a>
-          </li>
-          <li>
-            <a href="#inventory" className="nav-link">
-              <i className="fas fa-warehouse"></i>
-              <span>Inventory</span>
-            </a>
-          </li>
-          <li>
-            <a href="#suppliers" className="nav-link">
-              <i className="fas fa-building"></i>
-              <span>Suppliers</span>
-            </a>
-          </li>
-          <li>
-            <a href="#reports" className="nav-link">
-              <i className="fas fa-file-alt"></i>
-              <span>Reports</span>
-            </a>
-          </li>
-        </ul>
-      </nav>
-    </aside>
+      <button
+        className="sidebar-button"
+        onClick={() => setInventoryOpen(!inventoryOpen)}
+      >
+        Inventory
+        <span>{inventoryOpen ? "▼" : "▶"}</span>
+      </button>
+
+      {inventoryOpen && (
+        <div className="submenu">
+
+          <button
+            className="submenu-button"
+            onClick={() => navigate("/stock-management")}
+          >
+            • Stock Management
+          </button>
+
+          <button
+            className="submenu-button"
+            onClick={() => navigate("/expiry-alerts")}
+          >
+            • Expiry Alerts
+          </button>
+
+          <button
+            className="submenu-button"
+            onClick={() => navigate("/suppliers")}
+          >
+            • Suppliers
+          </button>
+
+          <button
+            className="submenu-button"
+            onClick={() => navigate("/purchase-orders")}
+          >
+            • Purchase Orders
+          </button>
+
+          <button
+            className="submenu-button"
+            onClick={() => navigate("/transfers")}
+          >
+            • Transfers
+          </button>
+
+        </div>
+      )}
+
+      <br />
+
+  
+      <button className="sidebar-button" onClick={() => navigate('/purchase-orders')}>
+        Orders
+      </button>
+
+      <br />
+
+   
+      <button className="sidebar-button" onClick={() => navigate('/messages')}>
+        Messages
+      </button>
+
+      <br />
+
+     
+      <button
+        className="sidebar-button"
+        onClick={() => setSettingsOpen(!settingsOpen)}
+      >
+        Settings
+        <span>{settingsOpen ? "▼" : "▶"}</span>
+      </button>
+
+      {settingsOpen && (
+        <div className="submenu">
+
+          <button
+            className="submenu-button"
+            onClick={() => navigate("/profile-settings")}
+          >
+            • Profile Settings
+          </button>
+
+          <button
+            className="submenu-button"
+            onClick={() => navigate("/change-password")}
+          >
+            • Change Password
+          </button>
+
+          <button
+            className="submenu-button"
+            onClick={() => navigate("/prescription-preferences")}
+          >
+            • Prescription Preferences
+          </button>
+
+          <button
+            className="submenu-button"
+            onClick={() => navigate("/inventory-preferences")}
+          >
+            • Inventory Preferences
+          </button>
+
+          <button
+            className="submenu-button"
+            onClick={() => navigate("/printer-settings")}
+          >
+            • Printer Settings
+          </button>
+
+          <button
+            className="submenu-button"
+            onClick={() => navigate("/notifications")}
+          >
+            • Notifications
+          </button>
+
+          <button
+            className="submenu-button"
+            onClick={() => navigate("/security")}
+          >
+            • Security
+          </button>
+
+        </div>
+      )}
+
+    </div>
   );
-};
+}
 
 export default Sidebar;

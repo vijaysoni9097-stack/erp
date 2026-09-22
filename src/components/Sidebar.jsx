@@ -1,162 +1,29 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import "../styles/Sidebar.css";
 
-function Sidebar() {
-  const [inventoryOpen, setInventoryOpen] = useState(false);
-  const [settingsOpen, setSettingsOpen] = useState(false);
+const navigation = [
+  { label: "Dashboard", path: "/dashboard", icon: "fa-table-cells-large" },
+  { label: "Medicines", path: "/machines", icon: "fa-pills" },
+  { label: "Inventory", icon: "fa-boxes-stacked", children: [["Stock Management", "/stock-management"], ["Expiry Alerts", "/expiry-alerts"], ["Suppliers", "/suppliers"]] },
+  { label: "Orders", path: "/purchase-orders", icon: "fa-cart-shopping" },
+  { label: "Messages", path: "/messages", icon: "fa-message" },
+  { label: "Settings", path: "/settings", icon: "fa-gear" },
+];
 
+function Sidebar({ isOpen }) {
   const navigate = useNavigate();
-
-  return (
-    <div className="sidebar">
-
-      <h4 className="menu-head">Main menu</h4>
-
-      <button className="sidebar-button" onClick={() => navigate('/dashboard')}>
-        Dashboard
-      </button>
-
-      <br />
-
-      <button className="sidebar-button" onClick={() => navigate('/machines')}>
-        Medicines
-      </button>
-
-      <br />
-
-      
-      <button
-        className="sidebar-button"
-        onClick={() => setInventoryOpen(!inventoryOpen)}
-      >
-        Inventory
-        <span>{inventoryOpen ? "▼" : "▶"}</span>
-      </button>
-
-      {inventoryOpen && (
-        <div className="submenu">
-
-          <button
-            className="submenu-button"
-            onClick={() => navigate("/stock-management")}
-          >
-            • Stock Management
-          </button>
-
-          <button
-            className="submenu-button"
-            onClick={() => navigate("/expiry-alerts")}
-          >
-            • Expiry Alerts
-          </button>
-
-          <button
-            className="submenu-button"
-            onClick={() => navigate("/suppliers")}
-          >
-            • Suppliers
-          </button>
-
-          <button
-            className="submenu-button"
-            onClick={() => navigate("/purchase-orders")}
-          >
-            • Purchase Orders
-          </button>
-
-          <button
-            className="submenu-button"
-            onClick={() => navigate("/transfers")}
-          >
-            • Transfers
-          </button>
-
-        </div>
-      )}
-
-      <br />
-
-  
-      <button className="sidebar-button" onClick={() => navigate('/purchase-orders')}>
-        Orders
-      </button>
-
-      <br />
-
-   
-      <button className="sidebar-button" onClick={() => navigate('/messages')}>
-        Messages
-      </button>
-
-      <br />
-
-     
-      <button
-        className="sidebar-button"
-        onClick={() => setSettingsOpen(!settingsOpen)}
-      >
-        Settings
-        <span>{settingsOpen ? "▼" : "▶"}</span>
-      </button>
-
-      {settingsOpen && (
-        <div className="submenu">
-
-          <button
-            className="submenu-button"
-            onClick={() => navigate("/profile-settings")}
-          >
-            • Profile Settings
-          </button>
-
-          <button
-            className="submenu-button"
-            onClick={() => navigate("/change-password")}
-          >
-            • Change Password
-          </button>
-
-          <button
-            className="submenu-button"
-            onClick={() => navigate("/prescription-preferences")}
-          >
-            • Prescription Preferences
-          </button>
-
-          <button
-            className="submenu-button"
-            onClick={() => navigate("/inventory-preferences")}
-          >
-            • Inventory Preferences
-          </button>
-
-          <button
-            className="submenu-button"
-            onClick={() => navigate("/printer-settings")}
-          >
-            • Printer Settings
-          </button>
-
-          <button
-            className="submenu-button"
-            onClick={() => navigate("/notifications")}
-          >
-            • Notifications
-          </button>
-
-          <button
-            className="submenu-button"
-            onClick={() => navigate("/security")}
-          >
-            • Security
-          </button>
-
-        </div>
-      )}
-
-    </div>
-  );
+  const location = useLocation();
+  const [inventoryOpen, setInventoryOpen] = useState(false);
+  return <aside className={`sidebar ${isOpen ? "sidebar-open" : ""}`}>
+    <div className="sidebar-brand"><span className="brand-mark"><i /><i /><i /></span><strong>Preclinic</strong></div>
+    <p className="menu-head">Main Menu</p>
+    <nav className="sidebar-nav">{navigation.map((item) => {
+      const active = item.path === location.pathname;
+      if (item.children) return <div key={item.label}><button type="button" className={`sidebar-button ${inventoryOpen ? "expanded" : ""}`} onClick={() => setInventoryOpen((open) => !open)}><span><i className={`fa-solid ${item.icon}`} />{item.label}</span><i className={`fa-solid fa-chevron-${inventoryOpen ? "down" : "right"} sidebar-chevron`} /></button>{inventoryOpen && <div className="submenu">{item.children.map(([label, path]) => <button type="button" key={path} onClick={() => navigate(path)}>{label}</button>)}</div>}</div>;
+      return <button type="button" key={item.label} className={`sidebar-button ${active ? "active" : ""}`} onClick={() => navigate(item.path)}><span><i className={`fa-solid ${item.icon}`} />{item.label}</span></button>;
+    })}</nav>
+    <div className="upgrade-card"><button type="button" className="upgrade-close" aria-label="Dismiss upgrade card">×</button><span className="upgrade-logo"><i /><i /><i /></span><strong>Upgrade To Pro</strong><p>Check 1 min video and begin use Preclinic like a pro</p><button type="button" className="upgrade-play" aria-label="Watch upgrade video"><i className="fa-solid fa-play" /></button></div>
+  </aside>;
 }
-
 export default Sidebar;

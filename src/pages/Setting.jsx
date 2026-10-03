@@ -345,7 +345,7 @@ function renderSection(activeKey) {
   }
 }
 
-function Setting() {
+function Setting({ onLogout }) {
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -376,7 +376,7 @@ function Setting() {
             </button>
           ))}
 
-          <button type="button" className="settings-logout">
+          <button type="button" className="settings-logout" onClick={onLogout}>
             <i className="fa-solid fa-right-from-bracket" />
             Log Out
           </button>

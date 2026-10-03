@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "../styles/Navbar.css";
 
-const Navbar = ({ onToggleSidebar }) => {
+const Navbar = ({ onToggleSidebar, onLogout }) => {
   const navigate = useNavigate();
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
@@ -19,7 +19,7 @@ const Navbar = ({ onToggleSidebar }) => {
     document.addEventListener("mousedown", closeMenu);
     return () => document.removeEventListener("mousedown", closeMenu);
   }, []);
-  const logout = () => { localStorage.removeItem("access_token"); localStorage.removeItem("refresh_token"); sessionStorage.clear(); navigate("/"); };
+  const logout = () => { onLogout?.(); navigate("/login"); };
   return <nav className="navbar-top"><div className="navbar-content">
     <button type="button" className="navbar-toggle" onClick={onToggleSidebar} aria-label="Toggle navigation"><i className="fas fa-bars" /></button>
     <div className="navbar-actions">

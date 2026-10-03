@@ -4,9 +4,9 @@ import "../styles/Sidebar.css";
 
 const navigation = [
   { label: "Dashboard", path: "/dashboard", icon: "fa-table-cells-large" },
-  { label: "Medicines", path: "/machines", icon: "fa-pills" },
-  { label: "Inventory", icon: "fa-boxes-stacked", children: [["Stock Management", "/stock-management"], ["Expiry Alerts", "/expiry-alerts"], ["Suppliers", "/suppliers"]] },
-  { label: "Orders", path: "/purchase-orders", icon: "fa-cart-shopping" },
+  { label: "Medicines", path: "/medicines", icon: "fa-pills" },
+  { label: "Inventory", icon: "fa-boxes-stacked", children: [["Stock Management", "/stock-management"], ["Expiry Alerts", "/expiry-alerts"], ["Suppliers", "/suppliers"], ["Purchase Orders", "/purchase-orders"], ["Transfers", "/transfers"]] },
+  { label: "Orders", path: "/orders", icon: "fa-cart-shopping" },
   { label: "Messages", path: "/messages", icon: "fa-message" },
   { label: "Settings", path: "/settings", icon: "fa-gear" },
 ];

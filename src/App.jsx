@@ -1,5 +1,6 @@
-import React, { useState } from 'react'
-import { Navigate, Route, Routes } from 'react-router-dom'
+import React, { useEffect, useState } from 'react'
+import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
+import { api, AUTH_EXPIRED_EVENT, SESSION_KEY, clearSession, readSession } from './services/api'
 import Navbar from './components/Navbar'
 import Sidebar from './components/Sidebar'
 import Dashboard from './pages/Dashboard'
@@ -14,29 +15,99 @@ import Messages from './pages/Messages'
 import Machines from './pages/Machines'
 import Setting from './pages/Setting'
 import Login from './pages/Login'
+import PasswordRecovery from './pages/PasswordRecovery'
 import 'bootstrap/dist/css/bootstrap.min.css'
 import '@fortawesome/fontawesome-free/css/all.min.css'
 import './App.css'
 
 function App() {
+  const location = useLocation()
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [authenticated, setAuthenticated] = useState(() => localStorage.getItem('access_token') === 'admin-session')
+  const [profile, setProfile] = useState(null)
+  const [checking, setChecking] = useState(true)
+  const [sessionError, setSessionError] = useState('')
+  const [retry, setRetry] = useState(0)
+  const authenticated = Boolean(profile)
+
+  useEffect(() => {
+    let cancelled = false
+    setChecking(true)
+    setSessionError('')
+    if (!readSession()) {
+      clearSession()
+      setChecking(false)
+      return
+    }
+    api.get('/auth/me').then(({ data }) => {
+      if (!cancelled) setProfile(data)
+    }).catch((error) => {
+      if (!cancelled && error.response?.status !== 401) {
+        setSessionError('Cannot reach the local pharmacy service. Start the backend and retry.')
+      }
+    }).finally(() => { if (!cancelled) setChecking(false) })
+    return () => { cancelled = true }
+  }, [retry])
+
+  useEffect(() => {
+    const profileUpdated = (event) => setProfile(event.detail)
+    window.addEventListener('erp:profile-updated', profileUpdated)
+    const expire = () => { setProfile(null); setSessionError('') }
+    const changed = (event) => {
+      if (event.key === SESSION_KEY || event.key === null) {
+        setProfile(null)
+        setRetry((value) => value + 1)
+      }
+    }
+    window.addEventListener(AUTH_EXPIRED_EVENT, expire)
+    window.addEventListener('storage', changed)
+    return () => {
+      window.removeEventListener('erp:profile-updated', profileUpdated)
+      window.removeEventListener(AUTH_EXPIRED_EVENT, expire)
+      window.removeEventListener('storage', changed)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!profile) return
+    const session = readSession()
+    const timer = setTimeout(() => {
+      clearSession()
+      setProfile(null)
+    }, session ? Math.max(0, Date.parse(session.expires_at) - Date.now()) : 0)
+    return () => clearTimeout(timer)
+  }, [profile])
 
   const handleToggleSidebar = () => {
     setSidebarOpen(!sidebarOpen)
   }
 
-  const handleLogin = () => {
-    localStorage.setItem('access_token', 'admin-session')
-    setAuthenticated(true)
+  const handleLogin = (data) => {
+    setSessionError('')
+    setProfile(data.profile)
   }
 
-  const handleLogout = () => {
-    localStorage.removeItem('access_token')
-    localStorage.removeItem('refresh_token')
-    sessionStorage.clear()
-    setAuthenticated(false)
+  const handleLogout = async () => {
+    try {
+      await api.post('/auth/logout')
+      clearSession()
+      setProfile(null)
+    } catch (error) {
+      if (error.response?.status !== 401) {
+        setSessionError('Logout could not reach the local service. Please retry to revoke your session.')
+      }
+    }
   }
+
+  // Recovery links remain accessible even with an existing or unavailable session.
+  if (location.pathname === '/forgot-password') return <PasswordRecovery key="forgot" />
+  if (location.pathname === '/reset-password') return <PasswordRecovery key="reset" reset />
+
+  if (checking) return <main className="login-page"><p role="status">Checking your session…</p></main>
+  if (sessionError && !authenticated) return <main className="login-page"><section>
+    <p role="alert">{sessionError}</p>
+    <button onClick={() => setRetry((value) => value + 1)}>Retry connection</button>
+    <button onClick={() => { clearSession(); setSessionError('') }}>Back to sign in</button>
+  </section></main>
 
   if (!authenticated) {
     return (
@@ -49,7 +120,8 @@ function App() {
 
   return (
     <div className="app">
-      <Navbar onToggleSidebar={handleToggleSidebar} onLogout={handleLogout} />
+      <Navbar profile={profile} onToggleSidebar={handleToggleSidebar} onLogout={handleLogout} />
+      {sessionError && <p role="alert">{sessionError}</p>}
       <div className="app-body">
         <Sidebar isOpen={sidebarOpen} />
         <main className="main-content">

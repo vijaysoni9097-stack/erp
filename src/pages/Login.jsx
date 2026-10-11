@@ -1,30 +1,29 @@
 import { useState } from 'react';
-import { Navigate } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
+import { authError, signIn } from '../services/api';
 import '../styles/Login.css';
 
-const DEFAULT_USERNAME = 'admin';
-const DEFAULT_PASSWORD = 'admin123';
 
 function Login({ onLogin }) {
-  const [username, setUsername] = useState('');
+  const location = useLocation();
+  const [email, setEmail] = useState('');
+  const [submitting, setSubmitting] = useState(false);
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
 
-  if (localStorage.getItem('access_token') === 'admin-session') {
-    return <Navigate to="/dashboard" replace />;
-  }
-
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
-
-    if (username.trim() !== DEFAULT_USERNAME || password !== DEFAULT_PASSWORD) {
-      setError('The username or password is incorrect.');
-      return;
-    }
-
+    if (submitting) return;
+    setSubmitting(true);
     setError('');
-    onLogin();
+    try {
+      onLogin(await signIn(email, password));
+    } catch (error) {
+      setError(authError(error));
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -56,19 +55,23 @@ function Login({ onLogin }) {
 
           <p className="login-eyebrow">WELCOME BACK</p>
           <h2>Sign in to your account</h2>
-          <p className="login-subtitle">Enter your administrator credentials to continue.</p>
+          <p className="login-subtitle">Enter your pharmacist email and password to continue.</p>
+
+          {location.state?.passwordChanged && <p role="status">Password updated. Sign in with your new password.</p>}
 
           <form className="login-form" onSubmit={handleSubmit}>
             <div className="login-field">
-              <label htmlFor="login-username">Username</label>
+              <label htmlFor="login-email">Email</label>
               <div className="login-input-wrap">
                 <i className="fa-regular fa-user" aria-hidden="true" />
                 <input
-                  id="login-username"
+                  id="login-email"
                   autoComplete="username"
-                  value={username}
-                  onChange={(event) => setUsername(event.target.value)}
-                  placeholder="Enter your username"
+                  type="email"
+                  value={email}
+                  onChange={(event) => setEmail(event.target.value)}
+                  placeholder="Enter your email"
+                  disabled={submitting}
                   required
                 />
               </div>
@@ -82,9 +85,12 @@ function Login({ onLogin }) {
                   id="login-password"
                   type={showPassword ? 'text' : 'password'}
                   autoComplete="current-password"
+                  minLength={12}
+                  maxLength={128}
                   value={password}
                   onChange={(event) => setPassword(event.target.value)}
                   placeholder="Enter your password"
+                  disabled={submitting}
                   required
                 />
                 <button
@@ -99,14 +105,16 @@ function Login({ onLogin }) {
               </div>
             </div>
 
+            <Link to="/forgot-password">Forgot password?</Link>
+
             {error && <p className="login-error" role="alert">{error}</p>}
 
-            <button type="submit" className="login-submit">
-              Sign In <i className="fa-solid fa-arrow-right" />
+            <button type="submit" className="login-submit" disabled={submitting}>
+              {submitting ? 'Signing in…' : 'Sign In'} <i className="fa-solid fa-arrow-right" />
             </button>
           </form>
 
-          <p className="login-default-hint">Default login: <strong>admin</strong> / <strong>admin123</strong></p>
+          <p className="login-default-hint">Sign in with your local pharmacy account. Internet is not required.</p>
         </div>
       </section>
     </main>

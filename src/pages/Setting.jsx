@@ -1,4 +1,6 @@
 import React from 'react';
+import EmployeeProfile from './EmployeeProfile';
+import ChangePassword from './ChangePassword';
 import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import '../styles/Settings.css';
 
@@ -28,41 +30,7 @@ const renderToggleRow = (title, description, checked = true) => (
 function renderSection(activeKey) {
   switch (activeKey) {
     case 'password':
-      return (
-        <>
-          <h2>Change Password</h2>
-          <div className="settings-section">
-            <div className="settings-row">
-              <div className="field-group">
-                <label htmlFor="current-password">Current Password</label>
-                <input id="current-password" type="password" placeholder="Enter current password" />
-              </div>
-              <div />
-              <div className="field-group">
-                <label htmlFor="new-password">New Password</label>
-                <input id="new-password" type="password" placeholder="Create a new password" />
-              </div>
-              <div className="field-group">
-                <label htmlFor="confirm-password">Confirm Password</label>
-                <input id="confirm-password" type="password" placeholder="Repeat your new password" />
-              </div>
-            </div>
-          </div>
-
-          <div className="settings-section">
-            <div className="settings-badges">
-              <span className="badge-item">8+ Characters</span>
-              <span className="badge-item">Uppercase & lowercase</span>
-              <span className="badge-item">At least 1 number</span>
-            </div>
-          </div>
-
-          <div className="form-actions">
-            <button type="button" className="secondary-button">Cancel</button>
-            <button type="button" className="primary-button">Update Password</button>
-          </div>
-        </>
-      );
+      return <ChangePassword />;
 
     case 'prescription':
       return (
@@ -282,66 +250,7 @@ function renderSection(activeKey) {
 
     case 'profile':
     default:
-      return (
-        <>
-          <h2>Profile</h2>
-          <div className="settings-section">
-            <div className="profile-preview">
-              <div className="profile-avatar-large">
-                <i className="fa-solid fa-user" />
-              </div>
-              <div className="profile-meta">
-                <strong>Dr. Emma Johnson</strong>
-                <span>Senior Pharmacist • Pharmacy Lead</span>
-              </div>
-              <button type="button" className="secondary-button">Upload Photo</button>
-            </div>
-          </div>
-
-          <div className="settings-section">
-            <div className="settings-row">
-              <div className="field-group">
-                <label htmlFor="full-name">Full Name</label>
-                <input id="full-name" type="text" defaultValue="Dr. Emma Johnson" />
-              </div>
-              <div className="field-group">
-                <label htmlFor="email">Email Address</label>
-                <input id="email" type="email" defaultValue="emma.johnson@preclinic.com" />
-              </div>
-              <div className="field-group">
-                <label htmlFor="phone">Phone Number</label>
-                <input id="phone" type="text" defaultValue="+1 (555) 019-3244" />
-              </div>
-              <div className="field-group">
-                <label htmlFor="specialization">Specialization</label>
-                <input id="specialization" type="text" defaultValue="Clinical Pharmacy" />
-              </div>
-              <div className="field-group">
-                <label htmlFor="clinic-name">Pharmacy Name</label>
-                <input id="clinic-name" type="text" defaultValue="Preclinic Wellness Pharmacy" />
-              </div>
-              <div className="field-group">
-                <label htmlFor="location">Location</label>
-                <input id="location" type="text" defaultValue="Downtown Clinic, Floor 2" />
-              </div>
-            </div>
-          </div>
-
-          <div className="settings-section">
-            <div className="settings-row">
-              <div className="field-group">
-                <label htmlFor="bio">Professional Bio</label>
-                <textarea id="bio" defaultValue="Responsible for patient counseling, prescription verification, and dispensing supervision across the pharmacy department." />
-              </div>
-            </div>
-          </div>
-
-          <div className="form-actions">
-            <button type="button" className="secondary-button">Cancel</button>
-            <button type="button" className="primary-button">Save Changes</button>
-          </div>
-        </>
-      );
+      return <EmployeeProfile />;
   }
 }
 

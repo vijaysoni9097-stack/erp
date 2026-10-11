@@ -321,3 +321,27 @@ For issues or questions:
 
 **Last Updated:** September 2026
 **Version:** 1.0.0
+
+## Local pharmacy login
+
+Run the FastAPI backend on `127.0.0.1:8000`, then run `npm run dev`. Vite forwards `/api` requests to the local backend; no cloud connection is required. Sign in with the email/password configured in the backend (`python -m app.setup_local --email your@email.com` for a new installation). Demo credentials are no longer accepted.
+
+The UI validates stored sessions through `/auth/me` on reload, attaches bearer tokens to requests through `src/services/api.js`, and revokes the session through `/auth/logout`. Tokens expire after 12 hours; a 401 redirects the UI to sign in. Backend connection failures show a retry message. Only token and expiry are saved locally, never passwords.
+
+For a deployed build, configure the web server to proxy `/api` to the backend on the same origin. All future pharmacy API calls should use the shared `api` client. Business pages still contain their existing demo data; this change integrates authentication only.
+
+## Password recovery
+
+The sign-in page links to `/forgot-password`, which calls `POST /api/v1/auth/forgot-password`.
+Email links open `/reset-password?token=…`; the form submits the token, new password,
+and confirmation to `POST /api/v1/auth/reset-password`. Passwords must match and contain
+12–128 characters. After success, local credentials are cleared and the user signs in again.
+The backend expires links after 15 minutes, accepts each once, and revokes existing sessions.
+
+In the backend `.env`, configure `SMTP_HOST`, `SMTP_PORT`, `SMTP_USERNAME`,
+`SMTP_PASSWORD`, `SMTP_FROM_EMAIL`, and `PASSWORD_RESET_URL=http://localhost:5173/reset-password`
+(use your actual frontend origin/port). Restart the backend after configuration. SMTP uses
+STARTTLS by default; use `SMTP_STARTTLS=false` only for a trusted local test relay.
+Use HTTPS for the deployed reset URL, proxy `/api` to the backend, and serve frontend routes
+through `index.html`. The app sets a no-referrer policy for reset links. Email recovery requires
+a reachable mail service; ordinary local sign-in still works offline.

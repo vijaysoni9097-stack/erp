@@ -382,3 +382,7 @@
     align-items: flex-start;
   }
 }
+
+.profile-avatar-large { flex-shrink: 0; }
+.profile-meta { min-width: 0; overflow-wrap: anywhere; }
+.field-group input[readonly] { background: #f6f7fa; color: #59667a; }

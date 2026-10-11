@@ -281,3 +281,6 @@
     font-size: 25px;
   }
 }
+.recovery-page { grid-template-columns: 1fr; }
+.recovery-page .login-form-side { min-height: 100vh; }
+.recovery-page h1 { font-size: 2rem; margin-bottom: 16px; }

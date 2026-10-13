@@ -345,3 +345,17 @@ STARTTLS by default; use `SMTP_STARTTLS=false` only for a trusted local test rel
 Use HTTPS for the deployed reset URL, proxy `/api` to the backend, and serve frontend routes
 through `index.html`. The app sets a no-referrer policy for reset links. Email recovery requires
 a reachable mail service; ordinary local sign-in still works offline.
+
+## Superadmin user management
+
+Superadmins see **User Management** in the sidebar (`/users`). They can create an
+employee with a role and initial password, delete non-superadmin accounts after
+confirmation, and reset another employee's password. Passwords require 12–128
+characters. Resetting or deleting a user revokes their sessions and recovery links.
+Superadmin accounts cannot be deleted; use Settings → Change Password for your own
+password. Other roles cannot access the page or its APIs (the backend returns 403).
+
+Backend endpoints: `GET/POST /api/v1/users`, `DELETE /api/v1/users/{id}`, and
+`POST /api/v1/users/{id}/reset-password`. Restart the backend after installing the
+API changes. The designated local superadmin is `pharmacist@example.com`; its
+password is stored only as a hash in the backend database, not in this repository.

@@ -15,6 +15,9 @@ import Messages from './pages/Messages'
 import Machines from './pages/Machines'
 import Setting from './pages/Setting'
 import Login from './pages/Login'
+import Users from './pages/Users'
+import Sync from './pages/Sync'
+import BackgroundSync from './components/BackgroundSync'
 import PasswordRecovery from './pages/PasswordRecovery'
 import 'bootstrap/dist/css/bootstrap.min.css'
 import '@fortawesome/fontawesome-free/css/all.min.css'
@@ -120,14 +123,17 @@ function App() {
 
   return (
     <div className="app">
+      <BackgroundSync key={profile.id} />
       <Navbar profile={profile} onToggleSidebar={handleToggleSidebar} onLogout={handleLogout} />
       {sessionError && <p role="alert">{sessionError}</p>}
       <div className="app-body">
-        <Sidebar isOpen={sidebarOpen} />
+        <Sidebar isOpen={sidebarOpen} profile={profile} />
         <main className="main-content">
           <Routes>
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
             <Route path="/login" element={<Navigate to="/dashboard" replace />} />
+            <Route path="/sync" element={<Sync />} />
+            <Route path="/users" element={profile.role === 'superadmin' ? <Users profile={profile} /> : <Navigate to="/dashboard" replace />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/medicines" element={<Medicines />} />
             <Route path="/orders" element={<Orders />} />

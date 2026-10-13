@@ -1,159 +1,68 @@
-import React from 'react';
+import { useEffect, useState } from 'react';
+import { api } from '../services/api';
 import '../styles/Suppliers.css';
+import '../styles/Settings.css';
 
-const supplierStats = [
-  { label: 'Total Suppliers', value: '24', change: '+12%', tone: 'blue', icon: 'fa-truck-medical' },
-  { label: 'On-Time Delivery', value: '18', change: '+8%', tone: 'green', icon: 'fa-circle-check' },
-  { label: 'Delayed', value: '4', change: '-3%', tone: 'amber', icon: 'fa-clock' },
-  { label: 'Avg. Lead Time', value: '5.2d', change: 'Stable', tone: 'sky', icon: 'fa-calendar-days' },
-];
-
-const suppliers = [
-  {
-    name: 'MedSupply Co.',
-    contact: 'Alicia Smith',
-    category: 'Tablets',
-    orders: '18',
-    delivery: '96%',
-    status: 'On Time',
-    tone: 'on-time',
-  },
-  {
-    name: 'PharmaCare Ltd.',
-    contact: 'Daniel Reed',
-    category: 'Capsules',
-    orders: '11',
-    delivery: '83%',
-    status: 'Delayed',
-    tone: 'delayed',
-  },
-  {
-    name: 'Wellness Distributors',
-    contact: 'Maria Lee',
-    category: 'Syrups',
-    orders: '7',
-    delivery: '92%',
-    status: 'On Time',
-    tone: 'on-time',
-  },
-  {
-    name: 'MediPlus',
-    contact: 'James Park',
-    category: 'Injectables',
-    orders: '5',
-    delivery: '78%',
-    status: 'Delayed',
-    tone: 'delayed',
-  },
-  {
-    name: 'Global Pharma',
-    contact: 'Emma Clarke',
-    category: 'Antibiotics',
-    orders: '9',
-    delivery: '94%',
-    status: 'On Time',
-    tone: 'on-time',
-  },
-  {
-    name: 'HealthCare Solutions',
-    contact: 'Robert Hall',
-    category: 'Supplements',
-    orders: '6',
-    delivery: '88%',
-    status: 'On Time',
-    tone: 'on-time',
-  },
-];
-
-function Suppliers() {
-  return (
-    <div className="suppliers-page">
-      <header className="suppliers-header">
-        <div>
-          <p className="eyebrow">Inventory</p>
-          <h1>Suppliers</h1>
-        </div>
-        <button type="button" className="primary-btn">
-          <i className="fa-solid fa-plus" /> Add Supplier
-        </button>
-      </header>
-
-      <section className="stats-grid" aria-label="Supplier summary statistics">
-        {supplierStats.map((stat) => (
-          <article key={stat.label} className="stat-card">
-            <div className="stat-copy">
-              <p>{stat.label}</p>
-              <div className="stat-row">
-                <strong>{stat.value}</strong>
-                <span className={`stat-badge ${stat.tone}`}>{stat.change}</span>
-              </div>
-            </div>
-            <span className={`stat-icon ${stat.tone}`}>
-              <i className={`fa-solid ${stat.icon}`} />
-            </span>
-          </article>
-        ))}
-      </section>
-
-      <section className="suppliers-panel">
-        <div className="panel-head">
-          <h2>Supplier Overview</h2>
-          <button type="button" className="ghost-btn">View All</button>
-        </div>
-
-        <div className="table-wrap">
-          <table className="suppliers-table">
-            <thead>
-              <tr>
-                <th>Supplier</th>
-                <th>Contact</th>
-                <th>Category</th>
-                <th>Orders</th>
-                <th>Delivery</th>
-                <th>Status</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-
-            <tbody>
-              {suppliers.map((supplier) => (
-                <tr key={supplier.name}>
-                  <td>
-                    <div className="supplier-meta">
-                      <span className="supplier-avatar"><i className="fa-solid fa-truck-medical" /></span>
-                      <strong>{supplier.name}</strong>
-                    </div>
-                  </td>
-                  <td>{supplier.contact}</td>
-                  <td>{supplier.category}</td>
-                  <td>{supplier.orders}</td>
-                  <td>{supplier.delivery}</td>
-                  <td>
-                    <span className={`status-pill ${supplier.tone}`}>{supplier.status}</span>
-                  </td>
-                  <td>
-                    <button type="button" className="table-action">View</button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </section>
-
-      <footer className="page-footer">
-        <div className="footer-left">
-          <span>© 2025 Preclinic</span>
-          <a href="#">Privacy</a>
-          <a href="#">Terms</a>
-        </div>
-        <div className="footer-right">
-          <span>Support</span>
-          <span>Help Center</span>
-        </div>
-      </footer>
-    </div>
-  );
+const empty = { name: '', contact_person: '', phone: '', email: '', address: '' };
+const fields = [['name', 'Supplier Name', 150], ['contact_person', 'Contact Person', 100], ['phone', 'Phone', 30], ['email', 'Email', 150], ['address', 'Address', 1000]];
+function message(error) {
+  const detail = error.response?.data?.detail;
+  return typeof detail === 'string' ? detail : Array.isArray(detail) ? detail.map((item) => item.msg).join(' ') : 'Unable to reach the local service. Please retry.';
 }
-
-export default Suppliers;
+export default function Suppliers() {
+  const [suppliers, setSuppliers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [editing, setEditing] = useState(null);
+  const [draft, setDraft] = useState(empty);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const [notice, setNotice] = useState('');
+  const [retry, setRetry] = useState(0);
+  useEffect(() => {
+    let active = true;
+    setLoading(true);
+    api.get('/suppliers').then(({ data }) => { if (active) setSuppliers(data); })
+      .catch((err) => { if (active) setError(message(err)); })
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, [retry]);
+  function edit(supplier) {
+    setEditing(supplier?.id || 'new');
+    setDraft(supplier ? Object.fromEntries(fields.map(([key]) => [key, supplier[key] || ''])) : empty);
+    setError(''); setNotice('');
+  }
+  async function save(event) {
+    event.preventDefault();
+    if (busy) return;
+    setBusy(true); setError(''); setNotice('');
+    try {
+      const { data } = editing === 'new' ? await api.post('/suppliers', draft) : await api.put(`/suppliers/${editing}`, draft);
+      setSuppliers((current) => [...current.filter((item) => item.id !== data.id), data].sort((a, b) => a.name.localeCompare(b.name)));
+      setEditing(null); setDraft(empty); setNotice('Supplier saved on this computer.');
+    } catch (err) { setError(message(err)); }
+    finally { setBusy(false); }
+  }
+  async function remove(supplier) {
+    if (!window.confirm(`Delete supplier ${supplier.name}?`)) return;
+    setBusy(true); setError(''); setNotice('');
+    try { await api.delete(`/suppliers/${supplier.id}`); setSuppliers((current) => current.filter((item) => item.id !== supplier.id)); setNotice('Supplier deleted.'); }
+    catch (err) { setError(message(err)); }
+    finally { setBusy(false); }
+  }
+  return <div className="suppliers-page">
+    <header className="suppliers-header"><div><p className="eyebrow">Inventory</p><h1>Suppliers</h1></div><button type="button" className="primary-btn" disabled={busy} onClick={() => edit(null)}><i className="fa-solid fa-plus" /> Add Supplier</button></header>
+    {error && <p role="alert" className="login-error">{error}</p>}
+    {notice && <p role="status">{notice}</p>}
+    {editing && <section className="suppliers-panel mb-4"><form onSubmit={save} className="p-3">
+      <h2>{editing === 'new' ? 'Add Supplier' : 'Edit Supplier'}</h2>
+      <div className="settings-row">{fields.map(([key, label, maxLength]) => <div className="field-group" key={key}><label htmlFor={`supplier-${key}`}>{label}</label><input id={`supplier-${key}`} type={key === 'email' ? 'email' : 'text'} maxLength={maxLength} minLength={key === 'name' ? 2 : undefined} required={key === 'name'} disabled={busy} value={draft[key]} onChange={(event) => setDraft((current) => ({ ...current, [key]: event.target.value }))} /></div>)}</div>
+      <div className="form-actions"><button type="button" className="secondary-button" disabled={busy} onClick={() => setEditing(null)}>Cancel</button><button type="submit" className="primary-button" disabled={busy}>{busy ? 'Saving…' : 'Save Supplier'}</button></div>
+    </form></section>}
+    <section className="suppliers-panel"><div className="panel-head"><h2>Suppliers ({suppliers.length})</h2><button type="button" className="ghost-btn" disabled={loading || busy} onClick={() => { setError(''); setRetry((value) => value + 1); }}>Refresh</button></div>
+      {loading ? <p role="status" className="p-3">Loading suppliers…</p> : <div className="table-wrap"><table className="suppliers-table"><thead><tr><th>Supplier</th><th>Contact</th><th>Phone</th><th>Email</th><th>Actions</th></tr></thead><tbody>
+        {suppliers.map((supplier) => <tr key={supplier.id}><td>{supplier.name}</td><td>{supplier.contact_person || '—'}</td><td>{supplier.phone || '—'}</td><td>{supplier.email || '—'}</td><td><div className="d-flex gap-2"><button type="button" className="table-action" disabled={busy} onClick={() => edit(supplier)}>Edit</button><button type="button" className="table-action" disabled={busy} onClick={() => remove(supplier)}>Delete</button></div></td></tr>)}
+        {!suppliers.length && <tr><td colSpan={5}>No suppliers yet. Add your first supplier to begin.</td></tr>}
+      </tbody></table></div>}
+    </section>
+  </div>;
+}

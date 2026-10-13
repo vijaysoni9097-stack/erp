@@ -8,16 +8,18 @@ const navigation = [
   { label: "Inventory", icon: "fa-boxes-stacked", children: [["Stock Management", "/stock-management"], ["Expiry Alerts", "/expiry-alerts"], ["Suppliers", "/suppliers"], ["Purchase Orders", "/purchase-orders"], ["Transfers", "/transfers"]] },
   { label: "Orders", path: "/orders", icon: "fa-cart-shopping" },
   { label: "Messages", path: "/messages", icon: "fa-message" },
+  { label: "User Management", path: "/users", icon: "fa-users-gear", superadminOnly: true },
+  { label: "Synchronization", path: "/sync", icon: "fa-rotate" },
   { label: "Settings", path: "/settings", icon: "fa-gear" },
 ];
 
-function Sidebar({ isOpen }) {
+function Sidebar({ isOpen, profile }) {
   const navigate = useNavigate();
   const location = useLocation();
   const [inventoryOpen, setInventoryOpen] = useState(false);
   return <aside className={`sidebar ${isOpen ? "sidebar-open" : ""}`}>
     <div className="sidebar-brand"><span className="brand-mark"><i /><i /><i /></span><strong>Preclinic</strong></div>
-    <nav className="sidebar-nav">{navigation.map((item) => {
+    <nav className="sidebar-nav">{navigation.filter((item) => !item.superadminOnly || profile?.role === "superadmin").map((item) => {
       const active = item.path === location.pathname;
       if (item.children) return <div key={item.label}><button type="button" className={`sidebar-button ${inventoryOpen ? "expanded" : ""}`} onClick={() => setInventoryOpen((open) => !open)}><span><i className={`fa-solid ${item.icon}`} />{item.label}</span><i className={`fa-solid fa-chevron-${inventoryOpen ? "down" : "right"} sidebar-chevron`} /></button>{inventoryOpen && <div className="submenu">{item.children.map(([label, path]) => <button type="button" key={path} onClick={() => navigate(path)}>{label}</button>)}</div>}</div>;
       return <button type="button" key={item.label} className={`sidebar-button ${active ? "active" : ""}`} onClick={() => navigate(item.path)}><span><i className={`fa-solid ${item.icon}`} />{item.label}</span></button>;

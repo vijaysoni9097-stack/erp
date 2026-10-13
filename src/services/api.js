@@ -21,7 +21,7 @@ export function clearSession() {
 
 const publicAuthPaths = ['/auth/login', '/auth/forgot-password', '/auth/reset-password']
 
-export const api = axios.create({ baseURL: '/api/v1', timeout: 10000 })
+export const api = axios.create({ baseURL: import.meta.env.VITE_API_BASE_URL || '/api/v1', timeout: 10000 })
 api.interceptors.request.use((config) => {
   const session = readSession()
   if (session && !publicAuthPaths.includes(config.url)) {
@@ -38,6 +38,12 @@ api.interceptors.response.use((response) => response, (error) => {
 })
 
 export function authError(error) {
+  const detail = error.response?.data?.detail
+  if ([401, 403, 409, 503].includes(error.response?.status) && typeof detail === 'string') {
+    return detail === 'Invalid email or password'
+      ? 'Your local pharmacy email or password is incorrect. Use the password you used before cloud setup.'
+      : detail
+  }
   if (error.response?.status === 401) return 'The email or password is incorrect.'
   if (error.response?.status === 422) return 'Enter a valid email and a password of 12–128 characters.'
   if (error.response?.status === 429) return 'Too many attempts. Please try again later.'
@@ -45,7 +51,7 @@ export function authError(error) {
 }
 
 export async function signIn(email, password) {
-  const { data } = await api.post('/auth/login', { email: email.trim(), password })
+  const { data } = await api.post('/auth/login', { email: email.trim(), password }, { timeout: 40000 })
   localStorage.setItem(SESSION_KEY, JSON.stringify({
     access_token: data.access_token, expires_at: data.expires_at,
   }))

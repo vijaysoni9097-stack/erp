@@ -6,6 +6,10 @@ const PAGE_SIZE = 50;
 const dateLabel = (value) => value ? new Date(`${value}T00:00:00`).toLocaleDateString() : '—';
 
 function Medicines() {
+  const [adding, setAdding] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState('');
+  const [notice, setNotice] = useState('');
   const [medicines, setMedicines] = useState([]);
   const [suppliers, setSuppliers] = useState({});
   const [loading, setLoading] = useState(true);
@@ -22,8 +26,8 @@ function Medicines() {
     setError('');
     setSupplierError(false);
     Promise.allSettled([
-      api.get('/medicines', { signal: controller.signal }),
-      api.get('/suppliers', { signal: controller.signal }),
+      api.get('/medicines', { signal: controller.signal, timeout: 90000 }),
+      api.get('/suppliers', { signal: controller.signal, timeout: 90000 }),
     ]).then(([catalog, supplierList]) => {
       if (controller.signal.aborted) return;
       if (catalog.status === 'fulfilled') {
@@ -41,6 +45,26 @@ function Medicines() {
     });
     return () => controller.abort();
   }, [reload]);
+
+  async function addMedicine(event) {
+    event.preventDefault();
+    if (saving) return;
+    const form = event.currentTarget;
+    const values = Object.fromEntries(new FormData(form));
+    const payload = { ...values, supplier_id: values.supplier_id ? Number(values.supplier_id) : null,
+      generic_name: values.generic_name || null, stock_quantity: 0,
+      reorder_level: Number(values.reorder_level), purchase_price: Number(values.purchase_price), selling_price: Number(values.selling_price) };
+    setSaving(true); setSaveError(''); setNotice('');
+    try {
+      const { data } = await api.post('/medicines', payload, { timeout: 90000 });
+      setMedicines(current => [...current, data].sort((a,b) => a.name.localeCompare(b.name)));
+      setSearch(''); setFilter('all'); setPage(1); setAdding(false);
+      setNotice(`${data.name} added successfully.`);
+    } catch (err) {
+      const detail = err.response?.data?.detail;
+      setSaveError(typeof detail === 'string' ? detail : Array.isArray(detail) ? detail.map(e => e.msg).join(' ') : 'Could not confirm the save. Refresh and check the SKU before retrying.');
+    } finally { setSaving(false); }
+  }
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -71,8 +95,21 @@ function Medicines() {
     <div className="medicines-page">
       <header className="medicines-header">
         <div><p className="eyebrow">Pharmacy Inventory</p><h1>Medicines</h1></div>
+        <button type="button" className="primary-btn" onClick={() => { setAdding(true); setSaveError(''); }}>Add Medicine</button>
         <button type="button" className="secondary-btn" disabled={loading} onClick={() => setReload(v => v + 1)}>Refresh</button>
       </header>
+      {notice && <p role="status">{notice}</p>}
+      {adding && <section className="medicines-panel"><form onSubmit={addMedicine} style={{padding: 20}}>
+        <h2>Add Medicine</h2>
+        {saveError && <p role="alert">{saveError}</p>}
+        <fieldset disabled={saving} style={{border: 0, display: 'grid', gap: 12, gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))'}}>
+          {[['name','Medicine Name','text',150],['generic_name','Generic Name','text',150],['sku','SKU','text',50],['batch_number','Batch Number','text',80],['expiry_date','Expiry Date','date'],['purchase_price','Purchase Price','number'],['selling_price','Selling Price','number'],['reorder_level','Reorder Level','number']].map(([key,label,type,max]) => <label key={key}>{label}<input name={key} type={type} required={key !== 'generic_name'} maxLength={max} minLength={['name','sku'].includes(key) ? 2 : undefined} min={type === 'number' ? 0 : undefined} step={key.includes('price') ? '0.01' : type === 'number' ? '1' : undefined} defaultValue={key === 'reorder_level' ? 10 : undefined} style={{display:'block',width:'100%'}} /></label>)}
+          <label>Supplier<select name="supplier_id" style={{display:'block',width:'100%'}}><option value="">No supplier</option>{Object.entries(suppliers).map(([id,name]) => <option key={id} value={id}>{name}</option>)}</select></label>
+        </fieldset>
+        <p>The medicine starts with zero stock. Receive stock separately before selling.</p>
+        <button type="submit" className="primary-btn" disabled={saving}>{saving ? 'Saving…' : 'Save Medicine'}</button>{' '}
+        <button type="button" className="secondary-btn" disabled={saving} onClick={() => setAdding(false)}>Cancel</button>
+      </form></section>}
       <section className="summary-grid" aria-label="Medicine summary statistics">
         {cards.map(card => <article key={card.label} className="summary-card">
           <div className="summary-copy"><p>{card.label}</p><div className="summary-row"><strong>{loading || error ? '—' : card.value.toLocaleString()}</strong></div></div>

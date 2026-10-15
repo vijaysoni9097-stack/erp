@@ -3,9 +3,12 @@ import { api } from '../services/api';
 import '../styles/Settings.css';
 
 const emptyUser = { first_name: '', last_name: '', email: '', license_number: '', pharmacy_name: '', role: 'pharmacist', password: '' };
+const requestOptions = { timeout: 90000 };
 const roles = ['doctor', 'superadmin', 'admin', 'pharmacist', 'nurse', 'receptionist'];
 const fields = [['first_name', 'First Name', 100], ['last_name', 'Last Name', 100], ['email', 'Email', 150], ['license_number', 'Professional License Number', 100], ['pharmacy_name', 'Pharmacy Name', 150], ['password', 'Initial Password', 128]];
 function message(error) {
+  if (error.code === 'ECONNABORTED' || error.code === 'ETIMEDOUT') return 'The service took too long to respond. Refresh the user list before retrying a change; it may already have been saved.';
+  if (error.response?.status >= 500) return 'The service is temporarily unavailable. Refresh the user list before retrying a change.';
   const detail = error.response?.data?.detail;
   return typeof detail === 'string' ? detail : Array.isArray(detail) ? detail.map((item) => item.msg).join(' ') : 'Unable to reach the service. Please retry.';
 }
@@ -24,7 +27,7 @@ export default function Users({ profile }) {
   useEffect(() => {
     let active = true;
     setLoading(true);
-    api.get('/users').then(({ data }) => { if (active) setUsers(data); })
+    api.get('/users', requestOptions).then(({ data }) => { if (active) setUsers(data); })
       .catch((err) => { if (active) setError(message(err)); })
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
@@ -35,7 +38,7 @@ export default function Users({ profile }) {
     if (busy) return;
     setBusy(true); setError(''); setNotice('');
     try {
-      const { data } = await api.post('/users', draft);
+      const { data } = await api.post('/users', draft, requestOptions);
       setUsers((current) => [...current, data]);
       setDraft(emptyUser);
       setNotice(`User ${data.email} created.`);
@@ -53,11 +56,11 @@ export default function Users({ profile }) {
     setBusy(true);
     try {
       if (selected.action === 'delete') {
-        await api.delete(`/users/${selected.user.id}`);
+        await api.delete(`/users/${selected.user.id}`, requestOptions);
         setUsers((current) => current.filter((user) => user.id !== selected.user.id));
         setNotice(`User ${selected.user.email} deleted.`);
       } else {
-        await api.post(`/users/${selected.user.id}/reset-password`, { new_password: password, confirm_password: confirmation });
+        await api.post(`/users/${selected.user.id}/reset-password`, { new_password: password, confirm_password: confirmation }, requestOptions);
         setNotice(`Password reset for ${selected.user.email}. Their existing sessions have been revoked.`);
       }
       setSelected(null); setPassword(''); setConfirmation('');
@@ -94,7 +97,7 @@ export default function Users({ profile }) {
     </form></section>}
     <section className="settings-card"><div className="w-100">
       <h2>Users</h2>
-      {loading ? <p role="status">Loading users…</p> : <div className="table-responsive"><table className="table align-middle"><thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Actions</th></tr></thead><tbody>
+      {loading ? <p role="status">Loading users… The testing service may take up to 90 seconds to respond.</p> : <div className="table-responsive"><table className="table align-middle"><thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Actions</th></tr></thead><tbody>
         {users.map((user) => <tr key={user.id}><td>{user.first_name} {user.last_name}</td><td>{user.email}</td><td>{user.role}</td><td>{user.id === profile.id ? 'Your account' : <div className="d-flex gap-2"><button type="button" className="secondary-button" disabled={busy} onClick={() => select(user, 'reset')}>Reset Password</button>{user.role !== 'superadmin' && <button type="button" className="secondary-button" disabled={busy} onClick={() => select(user, 'delete')}>Delete</button>}</div>}</td></tr>)}
       </tbody></table></div>}
       <button type="button" className="secondary-button" disabled={busy || loading} onClick={() => { setError(''); setRetry((value) => value + 1); }}>Refresh users</button>

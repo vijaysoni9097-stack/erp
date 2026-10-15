@@ -77,6 +77,31 @@ def run(connection):
     assert pull['role']=='superadmin'
     assert connection.execute('SELECT bool_and(expires_at<=issued_at+interval \'24 hours\') FROM erp.offline_leases WHERE pharmacy_id=%s',(tenant,)).fetchone()[0]
     assert rpc('erp_sync_pull',device,pull['cursor'])['changes']==[]
+    from time import perf_counter
+    batch=[{'p_operation':uid(),'p_entity':'suppliers','p_record':uid(),
+            'p_base_version':0,'p_payload':{'name':f'Bulk {i}'},'p_deleted':False} for i in range(200)]
+    started=perf_counter()
+    receipt=rpc('erp_sync_push_batch',device,Jsonb(batch))
+    elapsed=perf_counter()-started
+    assert len(receipt['receipts'])==200
+    assert all(r['result']['status']=='applied' for r in receipt['receipts'])
+    assert rpc('erp_sync_push_batch',device,Jsonb(batch))==receipt
+    denied(lambda: rpc('erp_sync_push_batch',device,Jsonb(batch+[batch[0]])))
+    denied(lambda: rpc('erp_sync_push_batch',device,Jsonb([])))
+    stale={**batch[0],'p_operation':uid()}
+    trailing={**batch[1],'p_operation':uid(),'p_record':uid(),'p_payload':{'name':'Trailing'}}
+    conflict=rpc('erp_sync_push_batch',device,Jsonb([stale,trailing]))
+    assert len(conflict['receipts'])==1 and conflict['receipts'][0]['result']['status']=='conflict'
+    assert rpc('erp_sync_push_batch',device,Jsonb([trailing]))['receipts'][0]['result']['record']['version']==1
+    good={**batch[2],'p_operation':uid(),'p_record':uid(),'p_payload':{'name':'Rollback'}}
+    bad={**good,'p_operation':uid(),'p_record':uid(),'p_entity':'employee_profiles'}
+    denied(lambda: rpc('erp_sync_push_batch',device,Jsonb([good,bad])))
+    assert rpc('erp_sync_push_batch',device,Jsonb([good]))['receipts'][0]['result']['record']['version']==1
+    with connection.transaction():
+        connection.execute('SET LOCAL ROLE authenticated')
+        denied(lambda: connection.execute('SELECT public.erp_sync_push_batch(%s,%s,%s)',(device,'wrong-key'*8,Jsonb(batch))))
+        connection.execute('RESET ROLE')
+    print(f'Bulk checks passed: 200 records in {elapsed:.2f}s (database RPC), replay, limits, conflict prefix, rollback, device credential.')
     connection.execute("UPDATE erp.employee_profiles SET role='nurse' WHERE id=%s",(actor,))
     denied(lambda: rpc('erp_stock_command',device,uid(),'receive',Jsonb({'medicine_id':medicine,'quantity':1})))
     with connection.transaction():

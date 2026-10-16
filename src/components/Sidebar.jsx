@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import "../styles/Sidebar.css";
 
 const navigation = [
+  { label: "Dispensing", path: "/dispense", icon: "fa-prescription-bottle-medical", dispensingOnly: true },
   { label: "Dashboard", path: "/dashboard", icon: "fa-table-cells-large" },
   { label: "Medicines", path: "/medicines", icon: "fa-pills" },
   { label: "Inventory", icon: "fa-boxes-stacked", children: [["Stock Management", "/stock-management"], ["Expiry Alerts", "/expiry-alerts"], ["Suppliers", "/suppliers"], ["Purchase Orders", "/purchase-orders"], ["Transfers", "/transfers"]] },
@@ -19,7 +20,7 @@ function Sidebar({ isOpen, profile }) {
   const [inventoryOpen, setInventoryOpen] = useState(false);
   return <aside className={`sidebar ${isOpen ? "sidebar-open" : ""}`}>
     <div className="sidebar-brand"><span className="brand-mark"><i /><i /><i /></span><strong>Preclinic</strong></div>
-    <nav className="sidebar-nav">{navigation.filter((item) => !item.superadminOnly || profile?.role === "superadmin").map((item) => {
+    <nav className="sidebar-nav">{navigation.filter((item) => (!item.superadminOnly || profile?.role === "superadmin") && (!item.dispensingOnly || ["pharmacist", "admin", "superadmin"].includes(profile?.role))).map((item) => {
       const active = item.path === location.pathname;
       if (item.children) return <div key={item.label}><button type="button" className={`sidebar-button ${inventoryOpen ? "expanded" : ""}`} onClick={() => setInventoryOpen((open) => !open)}><span><i className={`fa-solid ${item.icon}`} />{item.label}</span><i className={`fa-solid fa-chevron-${inventoryOpen ? "down" : "right"} sidebar-chevron`} /></button>{inventoryOpen && <div className="submenu">{item.children.map(([label, path]) => <button type="button" key={path} onClick={() => navigate(path)}>{label}</button>)}</div>}</div>;
       return <button type="button" key={item.label} className={`sidebar-button ${active ? "active" : ""}`} onClick={() => navigate(item.path)}><span><i className={`fa-solid ${item.icon}`} />{item.label}</span></button>;

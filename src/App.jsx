@@ -4,6 +4,7 @@ import { api, AUTH_EXPIRED_EVENT, SESSION_KEY, clearSession, readSession } from 
 import Navbar from './components/Navbar'
 import Sidebar from './components/Sidebar'
 import Dashboard from './pages/Dashboard'
+import Dispense from './pages/Dispense'
 import Medicines from './pages/Medicines'
 import Orders from './pages/Orders'
 import StockManagement from './pages/StockManagement'
@@ -130,10 +131,11 @@ function App() {
         <Sidebar isOpen={sidebarOpen} profile={profile} />
         <main className="main-content">
           <Routes>
-            <Route path="/" element={<Navigate to="/dashboard" replace />} />
-            <Route path="/login" element={<Navigate to="/dashboard" replace />} />
+            <Route path="/" element={<Navigate to={profile.role === 'pharmacist' ? '/dispense' : '/dashboard'} replace />} />
+            <Route path="/login" element={<Navigate to={profile.role === 'pharmacist' ? '/dispense' : '/dashboard'} replace />} />
             <Route path="/sync" element={<Sync />} />
-            <Route path="/users" element={profile.role === 'superadmin' ? <Users profile={profile} /> : <Navigate to="/dashboard" replace />} />
+            <Route path="/users" element={profile.role === 'superadmin' ? <Users profile={profile} /> : <Navigate to={profile.role === 'pharmacist' ? '/dispense' : '/dashboard'} replace />} />
+            <Route path="/dispense" element={['pharmacist','admin','superadmin'].includes(profile.role) ? <Dispense profile={profile} /> : <Navigate to="/dashboard" replace />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/medicines" element={<Medicines />} />
             <Route path="/orders" element={<Orders />} />

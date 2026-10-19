@@ -2,8 +2,8 @@
   width: 100%;
   min-height: 100%;
   padding: 22px 20px 36px;
-  background: #f6f7fa;
-  color: #1d2738;
+  background: var(--page-bg);
+  color: var(--text);
 }
 
 .medicines-header,
@@ -68,13 +68,13 @@
 }
 
 .primary-btn {
-  background: #2f4acb;
+  background: var(--accent);
   color: #fff;
   box-shadow: 0 8px 18px rgba(47, 74, 203, 0.18);
 }
 
 .secondary-btn {
-  border-color: #dfe3eb;
+  border-color: var(--border);
   background: #fff;
   color: #273348;
 }
@@ -139,7 +139,7 @@
 
 .summary-badge.blue,
 .summary-icon.blue {
-  background: #2f4acb;
+  background: var(--accent);
 }
 
 .summary-badge.green,
@@ -186,7 +186,7 @@
   width: min(100%, 420px);
   min-height: 42px;
   padding: 0 12px;
-  border: 1px solid #dfe3eb;
+  border: 1px solid var(--border);
   border-radius: 8px;
   background: #f9fafc;
 }
@@ -195,7 +195,7 @@
   width: 100%;
   border: 0;
   background: transparent;
-  color: #1d2738;
+  color: var(--text);
   font-size: 14px;
   outline: none;
 }
@@ -212,7 +212,7 @@
 .ghost-btn {
   min-height: 36px;
   padding: 0 14px;
-  border-color: #dfe3eb;
+  border-color: var(--border);
   background: #fff;
   color: #2b3547;
   font-size: 13px;
@@ -221,7 +221,7 @@
 .filter-button.active {
   background: #eff4ff;
   border-color: #dfe7ff;
-  color: #2f4acb;
+  color: var(--accent);
 }
 
 .medicines-panel {
@@ -287,7 +287,7 @@
   height: 36px;
   border-radius: 10px;
   background: linear-gradient(135deg, #e7edff, #d8e3ff);
-  color: #2f4acb;
+  color: var(--accent);
   font-size: 10px;
   font-weight: 800;
 }
@@ -347,7 +347,7 @@
   border-color: #dfe7ff;
   background: #f4f7ff;
   padding: 7px 10px;
-  color: #2f4acb;
+  color: var(--accent);
   font-size: 12px;
 }
 

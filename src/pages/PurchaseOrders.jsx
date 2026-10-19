@@ -27,7 +27,7 @@ const PurchaseOrders = () => {
       <div className="purchase-orders-header">
         <div className="header-title-section">
           <h1>Purchase Orders</h1>
-          <span className="badge bg-primary">Total Orders : 312</span>
+          <span className="badge">Total Orders : 312</span>
         </div>
         <button className="btn btn-primary btn-lg">
           <i className="fas fa-plus"></i> New Purchase Order

@@ -2,8 +2,8 @@
   width: 100%;
   min-height: 100%;
   padding: 22px 20px 36px;
-  background: #f6f7fa;
-  color: #1d2738;
+  background: var(--page-bg);
+  color: var(--text);
 }
 
 .inventory-header,
@@ -51,12 +51,12 @@
 }
 
 .primary-btn {
-  background: #2f4acb;
+  background: var(--accent);
   color: #fff;
 }
 
 .ghost-btn {
-  border-color: #dfe3eb;
+  border-color: var(--border);
   background: #fff;
   color: #2b3547;
 }

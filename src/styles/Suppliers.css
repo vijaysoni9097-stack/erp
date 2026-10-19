@@ -2,8 +2,8 @@
   width: 100%;
   min-height: 100%;
   padding: 22px 20px 36px;
-  background: #f6f7fa;
-  color: #1d2738;
+  background: var(--page-bg);
+  color: var(--text);
 }
 
 .suppliers-header,
@@ -55,13 +55,13 @@
 }
 
 .primary-btn {
-  background: #2f4acb;
+  background: var(--accent);
   color: #fff;
   box-shadow: 0 8px 18px rgba(47, 74, 203, 0.18);
 }
 
 .ghost-btn {
-  border-color: #dfe3eb;
+  border-color: var(--border);
   background: #fff;
   color: #2b3547;
 }
@@ -120,7 +120,7 @@
 
 .stat-badge.blue,
 .stat-icon.blue {
-  background: #2f4acb;
+  background: var(--accent);
 }
 
 .stat-badge.green,
@@ -209,11 +209,11 @@
   height: 34px;
   border-radius: 10px;
   background: #edf3ff;
-  color: #2f4acb;
+  color: var(--accent);
 }
 
 .supplier-meta strong {
-  color: #1d2738;
+  color: var(--text);
   font-size: 14px;
   font-weight: 700;
 }
@@ -242,7 +242,7 @@
 .table-action {
   border-color: #dfe7ff;
   background: #f4f7ff;
-  color: #2f4acb;
+  color: var(--accent);
 }
 
 .page-footer {
@@ -263,7 +263,7 @@
 }
 
 .page-footer a {
-  color: #3854cb;
+  color: var(--accent);
   text-decoration: none;
   font-weight: 600;
 }

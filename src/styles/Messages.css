@@ -3,8 +3,8 @@
   flex-direction: column;
   width: 100%;
   min-height: calc(100vh - 72px);
-  background: #f6f7fa;
-  color: #1d2738;
+  background: var(--page-bg);
+  color: var(--text);
 }
 
 .messages-shell {
@@ -54,7 +54,7 @@
 
 .messages-header h1 {
   margin: 0;
-  color: #1d2738;
+  color: var(--text);
   font-size: 1.15rem;
   font-weight: 800;
 }
@@ -77,14 +77,14 @@
   min-height: 36px;
   padding: 0 14px;
   border-color: #dfe7ff;
-  background: #2f4acb;
+  background: var(--accent);
   color: #fff;
 }
 
 .secondary-btn {
   min-height: 36px;
   padding: 0 12px;
-  border-color: #dfe3eb;
+  border-color: var(--border);
   background: #fff;
   color: #2b3547;
 }
@@ -103,7 +103,7 @@
   width: 100%;
   border: 0;
   background: transparent;
-  color: #1d2738;
+  color: var(--text);
   font-size: 13px;
   outline: none;
 }
@@ -121,7 +121,7 @@
 .filter-btn {
   min-height: 32px;
   padding: 0 12px;
-  border-color: #dfe3eb;
+  border-color: var(--border);
   background: #fff;
   color: #2b3547;
   font-size: 12px;
@@ -130,7 +130,7 @@
 .filter-btn.active {
   border-color: #dfe7ff;
   background: #eff4ff;
-  color: #2f4acb;
+  color: var(--accent);
 }
 
 .chat-list {
@@ -167,7 +167,7 @@
   height: 42px;
   border-radius: 50%;
   background: linear-gradient(135deg, #e7edff, #dfe9ff);
-  color: #2f4acb;
+  color: var(--accent);
   font-size: 11px;
   font-weight: 800;
 }
@@ -199,7 +199,7 @@
 }
 
 .chat-top strong {
-  color: #1d2738;
+  color: var(--text);
   font-size: 14px;
   font-weight: 700;
 }
@@ -225,7 +225,7 @@
   min-width: 20px;
   height: 20px;
   border-radius: 50%;
-  background: #2f4acb;
+  background: var(--accent);
   color: #fff;
   font-size: 10px;
   font-weight: 800;
@@ -252,7 +252,7 @@
   gap: 10px;
   padding: 0;
   background: transparent;
-  color: #1d2738;
+  color: var(--text);
 }
 
 .user-pill .avatar {
@@ -281,7 +281,7 @@
   place-items: center;
   width: 34px;
   height: 34px;
-  border-color: #dfe3eb;
+  border-color: var(--border);
   background: #fff;
   color: #2b3547;
 }
@@ -320,7 +320,7 @@
 }
 
 .chat-row.outgoing .message-bubble {
-  background: #2f4acb;
+  background: var(--accent);
   color: #fff;
   border-top-right-radius: 4px;
 }
@@ -346,7 +346,7 @@
 .message-popup strong {
   display: block;
   margin-bottom: 4px;
-  color: #1d2738;
+  color: var(--text);
   font-size: 14px;
 }
 
@@ -360,7 +360,7 @@
   padding: 0 12px;
   border-color: #dfe7ff;
   background: #eff4ff;
-  color: #2f4acb;
+  color: var(--accent);
   font-size: 12px;
 }
 
@@ -387,7 +387,7 @@
   width: 100%;
   border: 0;
   background: transparent;
-  color: #1d2738;
+  color: var(--text);
   font-size: 14px;
   outline: none;
 }
@@ -399,8 +399,8 @@
 .send-button {
   min-width: 118px;
   min-height: 46px;
-  border-color: #2f4acb;
-  background: #2f4acb;
+  border-color: var(--accent);
+  background: var(--accent);
   color: #fff;
 }
 
@@ -422,7 +422,7 @@
 }
 
 .footer a {
-  color: #3854cb;
+  color: var(--accent);
   text-decoration: none;
   font-weight: 600;
 }

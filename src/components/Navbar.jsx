@@ -8,12 +8,10 @@ const Navbar = ({ profile, onToggleSidebar, onLogout }) => {
   const initials = [profile?.first_name, profile?.last_name].filter(Boolean).map((name) => name.trim().charAt(0)).join("").toUpperCase() || profile?.email?.charAt(0).toUpperCase() || "?";
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
-  const [darkMode, setDarkMode] = useState(() => localStorage.getItem("theme") === "dark");
   const profileMenuRef = useRef(null);
   useEffect(() => {
-    document.body.classList.toggle("dark-mode", darkMode);
-    localStorage.setItem("theme", darkMode ? "dark" : "light");
-  }, [darkMode]);
+    document.body.classList.remove("dark-mode");
+  }, []);
   useEffect(() => {
     const closeMenu = (event) => {
       if (profileMenuRef.current && !profileMenuRef.current.contains(event.target)) setProfileMenuOpen(false);
@@ -27,7 +25,6 @@ const Navbar = ({ profile, onToggleSidebar, onLogout }) => {
     <div className="navbar-actions">
       <button type="button" className="ai-assistance-btn">AI Assistance <i className="fa-solid fa-sparkles" /></button>
       <button type="button" className="navbar-action-btn" onClick={() => navigate("/settings")} aria-label="Settings"><i className="fas fa-cog" /></button>
-      <button type="button" className="navbar-action-btn" onClick={() => setDarkMode((enabled) => !enabled)} aria-label={darkMode ? "Switch to light mode" : "Switch to dark mode"}><i className={`fas fa-${darkMode ? "sun" : "moon"}`} /></button>
       <button type="button" className="navbar-action-btn notification-btn" aria-label="Notifications"><i className="fas fa-bell" />{notificationsEnabled && <span className="notification-badge">1</span>}</button>
       <div className="profile-menu-wrap" ref={profileMenuRef}><button type="button" className="navbar-profile" onClick={() => setProfileMenuOpen((open) => !open)} aria-label="Open profile menu" aria-expanded={profileMenuOpen}><span className="profile-avatar profile-initials" aria-hidden="true">{profile?.photo_data_url ? <img src={profile.photo_data_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : initials}</span><span className="profile-status" /></button>
       {profileMenuOpen && <div className="profile-dropdown"><div className="profile-dropdown-user"><strong>{fullName}</strong><span>{profile?.email}</span></div><button type="button" onClick={() => { setProfileMenuOpen(false); navigate("/settings"); }}><i className="fa-regular fa-user" /> Profile Settings</button><button type="button" onClick={() => setNotificationsEnabled((enabled) => !enabled)}><i className="fa-regular fa-bell" /> Notifications <span className={`preference-state ${notificationsEnabled ? "enabled" : "disabled"}`}>{notificationsEnabled ? "On" : "Off"}</span></button><div className="profile-dropdown-divider" /><button type="button" className="logout-option" onClick={logout}><i className="fa-solid fa-arrow-right-from-bracket" /> Logout</button></div>}</div>

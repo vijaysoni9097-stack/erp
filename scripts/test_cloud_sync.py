@@ -106,8 +106,51 @@ def run(connection):
         denied(lambda: connection.execute('SELECT public.erp_sync_push_batch(%s,%s,%s)',(device,'wrong-key'*8,Jsonb(batch))))
         connection.execute('RESET ROLE')
     print(f'Bulk checks passed: 200 records in {elapsed:.2f}s (database RPC), replay, limits, conflict prefix, rollback, device credential.')
+    # Purchase orders preserve UUID parents and snapshots without changing stock.
+    po_id, po_operation = uid(), uid()
+    po_payload = {'request_id':uid(),'request_hash':'a'*64,'supplier_id':supplier,'supplier_name':'Supplier snapshot',
+        'currency':'INR','status':'pending_approval','expected_delivery':None,'notes':'Sync fixture','created_at':'2026-10-19T00:00:00Z',
+        'total_amount':'999.00','items':[{'medicine_id':medicine,'medicine_name':'Medicine snapshot','sku':'TEST','batch_number':'B',
+                                       'quantity':2,'unit_price':'3.00','line_total':'999.00'}]}
+    po_args=(device,po_operation,'purchase_orders',po_id,0,Jsonb(po_payload),False)
+    po=rpc('erp_sync_push',*po_args)
+    assert po['record']['total_amount']==6
+    assert po['record']['items'][0]['line_total']==6
+    assert rpc('erp_sync_push',*po_args)==po
+    assert rpc('erp_sync_push',device2,uid(),'purchase_orders',po_id,0,Jsonb(po_payload),False)['status']=='conflict'
+    denied(lambda: rpc('erp_sync_push',device,uid(),'purchase_orders',uid(),0,Jsonb({**po_payload,'request_id':uid(),'items':[{**po_payload['items'][0],'medicine_id':uid()}]}),False))
+    denied(lambda: rpc('erp_sync_push',device,uid(),'purchase_orders',uid(),0,Jsonb({**po_payload,'request_id':uid(),'created_by':actor}),False))
+    assert connection.execute('SELECT sum(quantity_change) FROM erp.stock_movements WHERE pharmacy_id=%s AND medicine_id=%s',(tenant,medicine)).fetchone()[0]==0
+    settings_id=str(uuid.UUID(__import__('hashlib').md5((tenant+':pharmacy_settings').encode()).hexdigest()))
+    settings={'default_prescription_duration_days':7,'auto_refill_reminders':True,'refill_reminder_lead_days':3,
+              'allow_generic_substitution':True,'default_pharmacy_notes':'Fixture','low_stock_threshold':10,
+              'low_stock_alerts_enabled':True,'expiry_alert_lead_days':7,'expiry_alerts_enabled':True,
+              'auto_reorder_enabled':False,'default_supplier_id':supplier}
+    assert rpc('erp_sync_push',device,uid(),'pharmacy_settings',settings_id,0,Jsonb(settings),False)['status']=='applied'
+    assert rpc('erp_sync_push',device2,uid(),'pharmacy_settings',settings_id,1,Jsonb({**settings,'low_stock_threshold':20}),False)['record']['version']==2
+    assert rpc('erp_sync_push',device,uid(),'pharmacy_settings',settings_id,1,Jsonb(settings),False)['status']=='conflict'
+    denied(lambda: rpc('erp_sync_push',device,uid(),'pharmacy_settings',uid(),0,Jsonb(settings),False))
+    notification_id=str(uuid.UUID(__import__('hashlib').md5((tenant+':notification_preferences:low_stock').encode()).hexdigest()))
+    notification={'event_type':'low_stock','email_enabled':False,'sms_enabled':True,'in_app_enabled':True}
+    assert rpc('erp_sync_push',device,uid(),'notification_preferences',notification_id,0,Jsonb(notification),False)['status']=='applied'
+    # Atomic mixed upload batches can include the new entity through the old RPC.
+    second_po={**po_payload,'request_id':uid()}
+    mixed=[{'p_operation':uid(),'p_entity':'purchase_orders','p_record':uid(),'p_base_version':0,'p_payload':second_po,'p_deleted':False}]
+    assert rpc('erp_sync_push_batch',device,Jsonb(mixed))['receipts'][0]['result']['status']=='applied'
+    incoming=rpc('erp_sync_pull',device2,0)
+    # Several pages may be needed after the bulk fixtures above.
+    seen=[]
+    while True:
+        seen.extend(incoming['changes'])
+        if not incoming['has_more']: break
+        incoming=rpc('erp_sync_pull',device2,incoming['cursor'])
+    assert any(c['entity']=='purchase_orders' and c['record_id']==po_id for c in seen)
+    assert any(c['entity']=='pharmacy_settings' for c in seen)
+    assert any(c['entity']=='notification_preferences' for c in seen)
+    print('Business sync checks passed: purchase receipts, computed totals, snapshots, tenant parents, unchanged stock, shared preferences, two-device pull and mixed batches.')
     connection.execute("UPDATE erp.employee_profiles SET role='nurse' WHERE id=%s",(actor,))
     denied(lambda: rpc('erp_stock_command',device,uid(),'receive',Jsonb({'medicine_id':medicine,'quantity':1})))
+    denied(lambda: rpc('erp_sync_push',device,uid(),'purchase_orders',uid(),0,Jsonb({**po_payload,'request_id':uid()}),False))
     with connection.transaction():
         connection.execute('SET LOCAL ROLE anon')
         denied(lambda: connection.execute('SELECT public.erp_sync_pull(%s,%s,0)',(device,secrets[device])))

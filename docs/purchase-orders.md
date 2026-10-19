@@ -28,8 +28,9 @@ Backend files are in the separate `erp-pharmacy-backend` repository:
 `app/api/purchase_orders.py`, the API registry, and
 `tests/test_purchase_orders.py`. Startup creates the two new purchasing tables
 through the existing SQLAlchemy schema initialization. Restart the backend after
-installing these files. Orders persist in that backend's database; the offline
-cross-device sync protocol does not yet include purchase orders.
+installing these files. Orders persist locally and automatically synchronize through the durable outbox.
+The cloud requires migration `202610190001_automatic_business_sync.sql`.
+Creating or synchronizing an order never changes stock.
 
 Validation: `node scripts/test_purchase_orders.mjs`, `npm run build`, and the
 backend's `test_purchase_orders.py` and `test_auth.py` suites. A browser check

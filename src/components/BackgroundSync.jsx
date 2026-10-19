@@ -3,19 +3,43 @@ import { api } from '../services/api';
 
 export default function BackgroundSync() {
   useEffect(() => {
-    let cancelled = false;
+    const controller = new AbortController();
     let timer;
-    let delay = 30000;
-    const tick = async () => {
+    let active = false;
+    let again = false;
+    let forceNext = false;
+    const wake = async () => {
+      if (active) { again = true; return; }
+      if (controller.signal.aborted) return;
+      active = true;
+      const force = forceNext; forceNext = false;
       try {
-        const { data } = await api.get('/sync/status');
-        if (!cancelled && data.enabled) await api.post('/sync/run', {}, { timeout: 120000 });
-        delay = 30000;
-      } catch { delay = Math.min(delay * 2, 300000); }
-      if (!cancelled) timer = setTimeout(tick, delay + Math.random() * 3000);
+        await api.post('/sync/wake', { force }, { signal: controller.signal });
+        if (!controller.signal.aborted) window.dispatchEvent(new Event('erp:sync-status'));
+      } catch { /* The durable backend worker continues retrying without the UI. */ }
+      finally {
+        active = false;
+        if (again && !controller.signal.aborted) { again = false; schedule(); }
+      }
     };
-    timer = setTimeout(tick, 1000);
-    return () => { cancelled = true; clearTimeout(timer); };
+    const schedule = (force = false) => {
+      forceNext ||= force;
+      clearTimeout(timer);
+      timer = setTimeout(wake, 300);
+    };
+    const online = () => schedule(true);
+    const changed = () => schedule();
+    window.addEventListener('online', online);
+    window.addEventListener('focus', online);
+    window.addEventListener('erp:data-saved', changed);
+    const poll = setInterval(changed, 30000);
+    schedule(true);
+    return () => {
+      controller.abort(); clearTimeout(timer); clearInterval(poll);
+      window.removeEventListener('online', online);
+      window.removeEventListener('focus', online);
+      window.removeEventListener('erp:data-saved', changed);
+    };
   }, []);
   return null;
 }

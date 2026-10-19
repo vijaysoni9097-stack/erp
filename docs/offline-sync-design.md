@@ -1,6 +1,8 @@
 # Offline editing with Supabase synchronization
 
-Status: four versioned migrations are applied to Supabase project `nosqyzumgkripfqnqknw`: 18 private ERP tables, authenticated sync RPCs, per-device allocations, 24-hour leases, and hashed device credentials. Cloud fixtures passed tests and were rolled back. Local queue/transport/status code is installed, but `SYNC_ENABLED` remains false. Live identity enrollment, initial data migration, cloud account administration, and remaining business-page integration are still pending. No existing business data has been uploaded.
+Status (October 19, 2026): the enrolled local installation uses automatic backend synchronization. Committed changes wake a background worker; it drains batches, pulls cloud updates, and retries temporary failures with backoff. Browser online/focus events also wake it. The backend must remain running. One normal online sign-in after upgrading authorizes encrypted session persistence across restarts; logout removes it. No manual Sync action is required.
+
+Supported records include suppliers, customers, medicines, prescriptions, sales/invoices, purchase orders, and shared pharmacy/notification preferences. Stock allocation and conflict checks remain enforced. Printer preferences, passwords, PINs and identity administration retain their separate security workflows. Hosted PostgreSQL mode saves directly to its cloud database; it does not provide the local SQLite offline workflow. The bulk, sale-payment and automatic-business-sync migrations are applied to the enrolled sync cloud.
 
 ## Confirmed requirements
 
@@ -55,7 +57,7 @@ Additional synchronization tables:
 5. Return the same result when an operation is retried after a lost response.
 6. Pull ordered changes after the stored cursor. Apply each page and advance the local cursor atomically.
 7. Retain tombstones for deletion until the retention/enrollment policy allows removal. A long-offline device may need a fresh snapshot before replaying its pending operations.
-8. Use exponential backoff with jitter, a manual retry action, and clear pending/conflict counts. Realtime notifications may trigger a pull but never replace the durable change log.
+8. Use exponential backoff with jitter, automatic reconnection retries, and clear pending/conflict counts. Realtime notifications may trigger a pull but never replace the durable change log.
 
 ## Conflicts and stock
 

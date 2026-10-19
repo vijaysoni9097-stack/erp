@@ -29,7 +29,13 @@ api.interceptors.request.use((config) => {
   }
   return config
 })
-api.interceptors.response.use((response) => response, (error) => {
+api.interceptors.response.use((response) => {
+  const { method, url = '' } = response.config
+  if (['post', 'put', 'patch', 'delete'].includes(method) && !url.startsWith('/auth/') && !url.startsWith('/sync/')) {
+    window.dispatchEvent(new Event('erp:data-saved'))
+  }
+  return response
+}, (error) => {
   if (error.response?.status === 401 && !publicAuthPaths.includes(error.config?.url)) {
     clearSession()
     window.dispatchEvent(new Event(AUTH_EXPIRED_EVENT))

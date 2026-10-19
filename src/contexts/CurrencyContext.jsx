@@ -1,8 +1,9 @@
-import { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import { createContext, useContext, useEffect, useState } from 'react';
 import { api } from '../services/api';
 import { resolveCurrency } from '../services/currency';
 
-const CurrencyContext = createContext(resolveCurrency());
+const pendingCurrency = { ...resolveCurrency(), currency: '…', symbol: '…', formatMoney: () => '…' };
+const CurrencyContext = createContext(pendingCurrency);
 export const useCurrency = () => useContext(CurrencyContext);
 
 export function CurrencyProvider({ profile, children }) {
@@ -12,8 +13,7 @@ export function CurrencyProvider({ profile, children }) {
     window.addEventListener('erp:suppliers-updated', refresh);
     return () => window.removeEventListener('erp:suppliers-updated', refresh);
   }, []);
-  const [details, setDetails] = useState(null);
-  const [suppliers, setSuppliers] = useState([]);
+  const [currency, setCurrency] = useState(pendingCurrency);
   useEffect(() => {
     const controller = new AbortController();
     Promise.allSettled([
@@ -21,11 +21,12 @@ export function CurrencyProvider({ profile, children }) {
       api.get('/suppliers', { signal: controller.signal, timeout: 90000 }),
     ]).then(([savedProfile, supplierList]) => {
       if (controller.signal.aborted) return;
-      setDetails(savedProfile.status === 'fulfilled' ? savedProfile.value.data : null);
-      setSuppliers(supplierList.status === 'fulfilled' ? supplierList.value.data : []);
+      setCurrency(resolveCurrency(
+        { ...profile, ...(savedProfile.status === 'fulfilled' ? savedProfile.value.data : {}) },
+        supplierList.status === 'fulfilled' ? supplierList.value.data : [],
+      ));
     });
     return () => controller.abort();
   }, [profile, revision]);
-  const value = useMemo(() => resolveCurrency({ ...profile, ...details }, suppliers), [details, profile, suppliers]);
-  return <CurrencyContext.Provider value={value}>{children}</CurrencyContext.Provider>;
+  return <CurrencyContext.Provider value={currency}>{children}</CurrencyContext.Provider>;
 }

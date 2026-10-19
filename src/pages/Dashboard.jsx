@@ -83,7 +83,7 @@ function Dashboard() {
       <header className="dashboard-header">
         <h1>Pharmacist Dashboard</h1>
         <div className="dashboard-buttons">
-          <button type="button" className="purchase-btn" onClick={() => (window.location.href = "/purchase-orders")}>
+          <button type="button" className="purchase-btn" onClick={() => (window.location.href = "/purchase-orders?new=1")}>
             <i className="fa-solid fa-plus" aria-hidden="true" /> New Purchase Order
           </button>
           <button type="button" className="stock-btn" onClick={() => (window.location.href = "/stock-management")}>

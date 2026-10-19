@@ -1,72 +1,88 @@
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useCurrency } from '../contexts/CurrencyContext';
-import React from 'react';
+import { api } from '../services/api';
+import { purchaseDate, purchaseError, purchaseOrderNumber, purchaseStatus } from '../services/purchaseOrders';
+import NewPurchaseOrder from '../components/NewPurchaseOrder';
 import '../styles/dashboard.css';
 import '../styles/PurchaseOrders.css';
 
-const PurchaseOrders = () => {
-  const { formatMoney } = useCurrency();
-  const purchaseOrders = [
-    { id: '#PO-3400', supplier: 'PharmaCare Ltd.', product: 'Amoxicillin 250mg x 300', date: '26 May 2025', price: 860 },
-    { id: '#PO-3399', supplier: 'GlaxoSmith Pharma', product: 'Ibuprofen 400mg x 800', date: '24 May 2025', price: 2100 },
-    { id: '#PO-3398', supplier: 'MedSupply Co.', product: 'Insulin Vials x 100', date: '22 May 2025', price: 1850 },
-    { id: '#PO-3397', supplier: 'Wellness Distributors', product: 'Cough Syrup 100ml x 200', date: '20 May 2025', price: 640 },
-    { id: '#PO-3396', supplier: 'MediPharm Inc.', product: 'Aspirin 500mg x 500', date: '18 May 2025', price: 420 },
-    { id: '#PO-3395', supplier: 'HealthCare Solutions', product: 'Vitamin C 1000mg x 100', date: '16 May 2025', price: 280 },
-    { id: '#PO-3394', supplier: 'Global Pharma', product: 'Antibiotic Tabs x 1000', date: '14 May 2025', price: 1560 },
-    { id: '#PO-3393', supplier: 'MediHub', product: 'Injectable 10ml x 50', date: '12 May 2025', price: 950 },
-  ];
+export default function PurchaseOrders({ title = 'Purchase Orders' }) {
+  const { formatMoney, currency, locale } = useCurrency();
+  const [params, setParams] = useSearchParams();
+  const [orders, setOrders] = useState([]);
+  const [suppliers, setSuppliers] = useState([]);
+  const [medicines, setMedicines] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [catalogLoading, setCatalogLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [catalogError, setCatalogError] = useState('');
+  const [notice, setNotice] = useState('');
+  const [reload, setReload] = useState(0);
+  const [showNew, setShowNew] = useState(params.get('new') === '1');
+  const [selected, setSelected] = useState(null);
+  const [search, setSearch] = useState('');
+  const [filter, setFilter] = useState('all');
+  const [page, setPage] = useState(1);
+  const detailDialog = useRef(null);
 
+  useEffect(() => {
+    const controller = new AbortController();
+    setLoading(true); setError('');
+    api.get('/purchase-orders', { signal: controller.signal, timeout: 90000 }).then(({ data }) => {
+      if (!Array.isArray(data)) throw new Error('Invalid purchase order list');
+      if (!controller.signal.aborted) setOrders(data);
+    }).catch(err => { if (!controller.signal.aborted) setError(err.response?.status === 404 ? 'The purchase order service is not available. Restart the updated backend and retry.' : err.response ? purchaseError(err) : 'Could not load purchase orders. Check the service and retry.'); })
+      .finally(() => { if (!controller.signal.aborted) setLoading(false); });
+    return () => controller.abort();
+  }, [reload]);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    setCatalogLoading(true); setCatalogError('');
+    Promise.all([api.get('/suppliers', { signal: controller.signal, timeout: 90000 }), api.get('/medicines', { signal: controller.signal, timeout: 90000 })])
+      .then(([supplierList, catalog]) => { if (!controller.signal.aborted) { setSuppliers(supplierList.data); setMedicines(catalog.data); } })
+      .catch(() => { if (!controller.signal.aborted) setCatalogError('Suppliers and medicines could not be loaded.'); })
+      .finally(() => { if (!controller.signal.aborted) setCatalogLoading(false); });
+    return () => controller.abort();
+  }, [reload]);
+
+  useEffect(() => { if (params.get('new') === '1') setShowNew(true); }, [params]);
+  useEffect(() => { if (selected && !detailDialog.current.open) detailDialog.current.showModal(); }, [selected]);
+
+  const filtered = useMemo(() => {
+    const term = search.trim().toLowerCase();
+    return orders.filter(order => (filter === 'all' || order.status === filter) && (!term || [purchaseOrderNumber(order.id), order.supplier_name, ...order.items.flatMap(item => [item.medicine_name, item.sku])].some(value => value.toLowerCase().includes(term))));
+  }, [orders, search, filter]);
+  const pages = Math.max(1, Math.ceil(filtered.length / 25));
+  const currentPage = Math.min(page, pages);
+  const now = new Date();
+  const thisMonth = orders.filter(order => { const created = purchaseDate(order.created_at); return created.getMonth() === now.getMonth() && created.getFullYear() === now.getFullYear() && order.currency === currency && order.status !== 'cancelled'; });
+  const monthTotal = thisMonth.reduce((sum, order) => sum + Math.round(Number(order.total_amount) * 100), 0) / 100;
   const stats = [
-    { title: 'Pending Approval', value: '6', icon: 'hourglass', tone: 'yellow' },
-    { title: 'In Transit', value: '9', icon: 'truck', tone: 'sky' },
-    { title: 'Delivered This Month', value: '36', icon: 'check-circle', tone: 'green' },
-    { title: 'Total Spend (MTD)', value: formatMoney(18420), icon: 'money-bill-wave', tone: 'blue' },
+    { title: 'Total Orders', value: orders.length.toLocaleString(), icon: 'cart-shopping', tone: 'blue' },
+    { title: 'Pending Approval', value: orders.filter(order => order.status === 'pending_approval').length.toLocaleString(), icon: 'hourglass', tone: 'yellow' },
+    { title: 'Units Ordered', value: orders.filter(order => order.status !== 'cancelled').reduce((sum, order) => sum + order.items.reduce((n, item) => n + item.quantity, 0), 0).toLocaleString(), icon: 'boxes-stacked', tone: 'green' },
+    { title: `Ordered This Month (${currency})`, value: formatMoney(monthTotal), icon: 'money-bill-wave', tone: 'sky' },
   ];
-
-  return (
-    <section className="dashboard-page purchase-orders-page">
-      <header className="dashboard-header">
-        <div className="purchase-orders-title">
-          <h1>Purchase Orders</h1>
-          <span className="purchase-orders-count">312 total orders</span>
-        </div>
-        <div className="dashboard-buttons">
-          <button type="button" className="purchase-btn"><i className="fa-solid fa-plus" aria-hidden="true" /> New Purchase Order</button>
-        </div>
-      </header>
-
-      <section className="dashboard-cards" aria-label="Purchase order summary">
-        {stats.map(stat => (
-          <article className="dashboard-card" key={stat.title}>
-            <p className="stat-label">{stat.title}</p>
-            <div className="stat-value-row"><strong>{stat.value}</strong></div>
-            <span className={`stat-icon ${stat.tone}`}><i className={`fa-solid fa-${stat.icon}`} aria-hidden="true" /></span>
-          </article>
-        ))}
-      </section>
-
-      <section className="dashboard-panel" aria-labelledby="purchase-order-list-title">
-        <div className="panel-header">
-          <h2 id="purchase-order-list-title">Purchase Order List</h2>
-          <span className="purchase-orders-list-count">{purchaseOrders.length} orders shown</span>
-        </div>
-        <div className="table-scroll">
-          <table className="dashboard-table purchase-orders-table" aria-label="Purchase orders">
-            <thead><tr><th scope="col">PO ID</th><th scope="col">Supplier</th><th scope="col">Product</th><th scope="col">Date</th><th scope="col" className="purchase-orders-price">Price</th></tr></thead>
-            <tbody>{purchaseOrders.map(order => (
-              <tr key={order.id}>
-                <td><strong>{order.id}</strong></td>
-                <td>{order.supplier}</td>
-                <td>{order.product}</td>
-                <td>{order.date}</td>
-                <td className="purchase-orders-price"><strong>{formatMoney(order.price)}</strong></td>
-              </tr>
-            ))}</tbody>
-          </table>
-        </div>
-      </section>
+  const orderMoney = (value, order) => new Intl.NumberFormat(locale, { style: 'currency', currency: order.currency }).format(Number(value));
+  function closeNew() {
+    setShowNew(false);
+    if (params.has('new')) { const next = new URLSearchParams(params); next.delete('new'); setParams(next, { replace: true }); }
+  }
+  function created(order) {
+    closeNew(); setNotice(`${purchaseOrderNumber(order.id)} created and awaiting approval.`);
+    setOrders(previous => [order, ...previous.filter(item => item.id !== order.id)]);
+    setSelected(order); setSearch(''); setFilter('all'); setPage(1); setReload(value => value + 1);
+  }
+  return <section className="dashboard-page purchase-orders-page">
+    <header className="dashboard-header"><div className="purchase-orders-title"><h1>{title}</h1><span className="purchase-orders-count">{loading || error ? '—' : orders.length.toLocaleString()} total orders</span></div><div className="dashboard-buttons"><button type="button" className="stock-btn" disabled={loading} onClick={() => setReload(value => value + 1)}>Refresh</button><button type="button" className="purchase-btn" onClick={() => setShowNew(true)}><i className="fa-solid fa-plus" aria-hidden="true" /> New Purchase Order</button></div></header>
+    {notice && <p role="status" className="purchase-order-success">{notice}</p>}
+    <section className="dashboard-cards" aria-label="Purchase order summary">{stats.map(stat => <article className="dashboard-card" key={stat.title}><p className="stat-label">{stat.title}</p><div className="stat-value-row"><strong>{loading || error ? '—' : stat.value}</strong></div><span className={`stat-icon ${stat.tone}`}><i className={`fa-solid fa-${stat.icon}`} aria-hidden="true" /></span></article>)}</section>
+    <section className="dashboard-panel" aria-labelledby="purchase-order-list-title"><div className="panel-header"><h2 id="purchase-order-list-title">Purchase Order List</h2><div className="purchase-order-list-tools"><input type="search" aria-label="Search purchase orders" placeholder="Search order, supplier or medicine" value={search} onChange={event => { setSearch(event.target.value); setPage(1); }} /><select aria-label="Filter purchase orders by status" value={filter} onChange={event => { setFilter(event.target.value); setPage(1); }}><option value="all">All statuses</option>{[...new Set(['pending_approval', ...orders.map(order => order.status)])].map(status => <option key={status} value={status}>{purchaseStatus(status)}</option>)}</select></div></div>
+      {loading ? <p className="purchase-order-empty" role="status">Loading purchase orders…</p> : error ? <p className="purchase-order-empty purchase-order-error" role="alert">{error} <button type="button" onClick={() => setReload(value => value + 1)}>Retry</button></p> : <><div className="table-scroll"><table className="dashboard-table purchase-orders-table" aria-label="Purchase orders"><thead><tr><th scope="col">PO ID</th><th scope="col">Supplier</th><th scope="col">Medicines</th><th scope="col">Created</th><th scope="col">Expected delivery</th><th scope="col">Status</th><th scope="col" className="purchase-orders-price">Estimated total</th></tr></thead><tbody>{filtered.slice((currentPage - 1) * 25, currentPage * 25).map(order => <tr key={order.id}><td><button type="button" className="purchase-order-link" onClick={() => setSelected(order)}>{purchaseOrderNumber(order.id)}</button></td><td>{order.supplier_name}</td><td>{order.items.length} {order.items.length === 1 ? 'medicine' : 'medicines'} · {order.items.reduce((n, item) => n + item.quantity, 0)} units</td><td>{purchaseDate(order.created_at).toLocaleDateString()}</td><td>{order.expected_delivery ? new Date(`${order.expected_delivery}T12:00:00`).toLocaleDateString() : 'Not specified'}</td><td><span className={`purchase-order-status ${order.status}`}>{purchaseStatus(order.status)}</span></td><td className="purchase-orders-price"><strong>{orderMoney(order.total_amount, order)}</strong></td></tr>)}{!filtered.length && <tr><td colSpan={7} className="purchase-order-empty">{orders.length ? 'No orders match your search or filter.' : 'No purchase orders yet. Create your first order to get started.'}</td></tr>}</tbody></table></div><div className="purchase-order-pagination"><span>{filtered.length} orders · Page {currentPage} of {pages}</span><div><button type="button" className="filter-button" disabled={currentPage === 1} onClick={() => setPage(currentPage - 1)}>Previous</button><button type="button" className="filter-button" disabled={currentPage === pages} onClick={() => setPage(currentPage + 1)}>Next</button></div></div></>}
     </section>
-  );
-};
-
-export default PurchaseOrders;
+    <NewPurchaseOrder open={showNew} onClose={closeNew} onCreated={created} suppliers={suppliers} medicines={medicines} loading={catalogLoading} catalogError={catalogError} onRetry={() => setReload(value => value + 1)} />
+    <dialog ref={detailDialog} className="purchase-order-dialog" aria-labelledby="purchase-order-detail-title" onClose={() => setSelected(null)} onCancel={() => setSelected(null)}>{selected && <><header className="purchase-order-modal-header"><div><p>Purchase Order</p><h2 id="purchase-order-detail-title">{purchaseOrderNumber(selected.id)}</h2></div><button type="button" className="purchase-order-icon-button" aria-label="Close purchase order details" onClick={() => detailDialog.current.close()}><i className="fa-solid fa-xmark" aria-hidden="true" /></button></header><div className="purchase-order-form-body"><dl className="purchase-order-detail-meta"><div><dt>Supplier</dt><dd>{selected.supplier_name}</dd></div><div><dt>Status</dt><dd>{purchaseStatus(selected.status)}</dd></div><div><dt>Created</dt><dd>{purchaseDate(selected.created_at).toLocaleString()}</dd></div><div><dt>Expected delivery</dt><dd>{selected.expected_delivery || 'Not specified'}</dd></div><div><dt>Currency</dt><dd>{selected.currency}</dd></div></dl><div className="table-scroll"><table className="purchase-order-lines"><caption className="visually-hidden">Saved purchase order medicines</caption><thead><tr><th scope="col">Medicine</th><th scope="col">Quantity</th><th scope="col">Unit cost</th><th scope="col">Amount</th></tr></thead><tbody>{selected.items.map(item => <tr key={item.id}><td><strong>{item.medicine_name}</strong><small>{item.sku} · Batch {item.batch_number}</small></td><td>{item.quantity}</td><td>{orderMoney(item.unit_price, selected)}</td><td>{orderMoney(item.line_total, selected)}</td></tr>)}</tbody></table></div>{selected.notes && <p className="purchase-order-saved-notes"><strong>Notes</strong>{selected.notes}</p>}<p className="purchase-order-note">Awaiting a separate approval and receiving process. Creating this order has not changed stock.</p></div><footer className="purchase-order-modal-footer"><div><span>Estimated total</span><strong>{orderMoney(selected.total_amount, selected)}</strong></div><button type="button" className="filter-button" onClick={() => detailDialog.current.close()}>Close</button></footer></>}</dialog>
+  </section>;
+}

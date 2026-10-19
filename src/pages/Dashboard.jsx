@@ -1,5 +1,7 @@
 import { useCurrency } from '../contexts/CurrencyContext';
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { api } from "../services/api";
+import { dashboardData } from "../services/dashboardData";
 import "../styles/dashboard.css";
 import {
   Bar,
@@ -16,63 +18,44 @@ import {
   YAxis,
 } from "recharts";
 
-const salesByPeriod = {
-  "This Week": [
-    { name: "Mon", units: 180, revenue: 8 },
-    { name: "Tue", units: 210, revenue: 12 },
-    { name: "Wed", units: 165, revenue: 10 },
-    { name: "Thu", units: 240, revenue: 18 },
-    { name: "Fri", units: 200, revenue: 14 },
-    { name: "Sat", units: 260, revenue: 20 },
-    { name: "Sun", units: 230, revenue: 16 },
-  ],
-  "This Month": [
-    { name: "Week 1", units: 760, revenue: 58 },
-    { name: "Week 2", units: 840, revenue: 66 },
-    { name: "Week 3", units: 790, revenue: 60 },
-    { name: "Week 4", units: 930, revenue: 74 },
-  ],
-  "This Year": [
-    { name: "Jan", units: 2650, revenue: 210 },
-    { name: "Mar", units: 3020, revenue: 240 },
-    { name: "May", units: 3280, revenue: 266 },
-    { name: "Jul", units: 3120, revenue: 252 },
-    { name: "Sep", units: 3560, revenue: 294 },
-    { name: "Nov", units: 3710, revenue: 310 },
-  ],
-};
-
-const stockByCategory = [
-  { name: "Tablets", value: 38, color: "#4356d8" },
-  { name: "Capsules", value: 24, color: "#4a9b8f" },
-  { name: "Syrups", value: 16, color: "#dfc251" },
-  { name: "Injectables", value: 14, color: "#cb3886" },
-  { name: "Others", value: 8, color: "#a8adb8" },
-];
-
-const summaryCards = [
-  { label: "Total Medicines", value: "1,248", badge: "+12%", note: "In last 7 Days", icon: "fa-capsules", tone: "blue" },
-  { label: "Pending Orders", value: "36", badge: "+5%", note: "Awaiting Fulfillment", icon: "fa-cart-shopping", tone: "yellow" },
-  { label: "Low Stock Items", value: "18", badge: "+3%", note: "Need Reordering", icon: "fa-triangle-exclamation", tone: "red" },
-  { label: "Expiring Soon", value: "9", badge: "30 days", note: "Requires Attention", icon: "fa-calendar-days", tone: "sky" },
-];
-
-const recentPrescriptions = [
-  ["Alberto Ripley", "#PR455698", "Amoxicillin 250mg", "Dr. Michael Smith", "Pending", "Dispense", "AR"],
-  ["Susan Babin", "#PR455699", "Paracetamol 500mg", "Dr. Sarah Patel", "Dispensed", "View", "SB"],
-  ["Carol Lam", "#PR455700", "Ibuprofen 400mg", "Dr. Michael Smith", "Out of Stock", "View", "CL"],
-  ["John Elsass", "#PR455618", "Paracetamol 500mg", "Dr. Rachel Green", "Pending", "Dispense", "JE"],
-];
-const expiryAlerts = [["Amoxicillin 250mg", "Batch #AX2201", "5 Days", "critical"], ["Cough Syrup 100ml", "Batch #CS0091", "14 Days", "warning"], ["Insulin Vials", "Batch #IN0045", "28 Days", "safe"], ["Ibuprofen", "Batch #IN0042", "12 Days", "warning"]];
-const lowStockMedicines = [["Paracetamol 500mg", "Tablet", "24", "50", "MedSupply Co."], ["Amoxicillin 250mg", "Capsule", "12", "40", "PharmaCare Ltd."], ["Ibuprofen 400mg", "Tablet", "8", "30", "MedSupply Co."]];
-const topSellingMedicines = [["Paracetamol 500mg", "312 units", 100], ["Amoxicillin 250mg", "245 units", 78], ["Cough Syrup 100ml", "198 units", 63], ["Ibuprofen 400mg", "164 units", 52], ["Insulin Vials", "96 units", 31]];
-const suppliers = [["MedSupply Co.", "18 orders this month", "On Time", "on-time"], ["PharmaCare Ltd.", "11 orders this month", "Delayed", "delayed"], ["Wellness Distributors", "7 orders this month", "On Time", "on-time"], ["Pharma Distributors", "5 orders this month", "Delayed", "delayed"]];
-
 function Dashboard() {
   const { currency, symbol, formatMoney } = useCurrency();
   const [isPeriodMenuOpen, setIsPeriodMenuOpen] = useState(false);
   const [period, setPeriod] = useState("This Week");
 
+  const [records, setRecords] = useState(null);
+  const [error, setError] = useState('');
+  const [updated, setUpdated] = useState(null);
+  useEffect(() => {
+    const controller = new AbortController();
+    let active = false;
+    const refresh = async () => {
+      if (active) return;
+      active = true;
+      try {
+        const names = ['medicines','sales','purchase-orders','prescriptions','customers','suppliers'];
+        const responses = await Promise.all(names.map(name => api.get(`/${name}`, { signal:controller.signal, timeout:90000 })));
+        if (controller.signal.aborted) return;
+        if (responses.some(r => !Array.isArray(r.data))) throw new Error('Invalid dashboard data');
+        setRecords(Object.fromEntries(['medicines','sales','orders','prescriptions','customers','suppliers'].map((key,i)=>[key,responses[i].data])));
+        setUpdated(new Date()); setError('');
+      } catch { if (!controller.signal.aborted) setError('Dashboard could not refresh. Displayed figures may be out of date.'); }
+      finally { active = false; }
+    };
+    refresh();
+    const timer = setInterval(refresh,30000);
+    ['focus','erp:data-saved','erp:sync-status'].forEach(event=>window.addEventListener(event,refresh));
+    return () => { controller.abort(); clearInterval(timer); ['focus','erp:data-saved','erp:sync-status'].forEach(event=>window.removeEventListener(event,refresh)); };
+  }, []);
+  const data = useMemo(()=>records ? dashboardData(records) : null,[records]);
+  const { salesByPeriod, stockByCategory, recentPrescriptions, expiryAlerts, lowStockMedicines, topSellingMedicines, supplierRows: suppliers } = data || {salesByPeriod:{},stockByCategory:[],recentPrescriptions:[],expiryAlerts:[],lowStockMedicines:[],topSellingMedicines:[],supplierRows:[]};
+  const summaryCards = data ? [
+    {label:'Today’s Sales',value:formatMoney(data.todaySales),note:'Completed invoices · local day',icon:'fa-receipt',tone:'blue'},
+    {label:'Total Medicines',value:data.totalMedicines,note:'Saved medicine batches',icon:'fa-capsules',tone:'blue'},
+    {label:'Pending Orders',value:data.pendingOrders,note:'Awaiting approval or receipt',icon:'fa-cart-shopping',tone:'yellow'},
+    {label:'Low Stock Items',value:data.low.length,note:'At or below reorder level',icon:'fa-triangle-exclamation',tone:'red'},
+    {label:'Expiring Soon',value:data.expiry.length,note:'In-stock batches within 30 days',icon:'fa-calendar-days',tone:'sky'},
+  ] : [];
   const selectPeriod = (value) => {
     setPeriod(value);
     setIsPeriodMenuOpen(false);
@@ -81,7 +64,7 @@ function Dashboard() {
   return (
     <section className="dashboard-page">
       <header className="dashboard-header">
-        <h1>Pharmacist Dashboard</h1>
+        <div><p className="dashboard-eyebrow">PHARMACY OVERVIEW</p><h1>Pharmacist Dashboard</h1><p className="dashboard-subtitle">Sales, stock and the items that need your attention.</p></div>
         <div className="dashboard-buttons">
           <button type="button" className="purchase-btn" onClick={() => (window.location.href = "/purchase-orders?new=1")}>
             <i className="fa-solid fa-plus" aria-hidden="true" /> New Purchase Order
@@ -92,14 +75,15 @@ function Dashboard() {
         </div>
       </header>
 
+      <div className={`dashboard-update ${error ? 'has-error' : ''}`} role="status"><span className="dashboard-update-dot" /><span>{error || (updated ? `Updated ${updated.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'})} · Refreshes automatically` : 'Loading pharmacy data…')}</span></div>
       <div className="dashboard-cards">
         {summaryCards.map((card) => (
-          <article className="dashboard-card" key={card.label}>
+          <article className={`dashboard-card ${card.label === 'Today’s Sales' ? 'dashboard-card-sales' : ''}`} key={card.label}>
             <div>
               <p className="stat-label">{card.label}</p>
               <div className="stat-value-row">
                 <strong>{card.value}</strong>
-                <span className={`stat-badge ${card.tone}`}>{card.badge}</span>
+
               </div>
             </div>
             <span className={`stat-icon ${card.tone}`} aria-hidden="true"><i className={`fa-solid ${card.icon}`} /></span>
@@ -118,7 +102,7 @@ function Dashboard() {
               </button>
               {isPeriodMenuOpen && (
                 <div className="dropdown-menu">
-                  {Object.keys(salesByPeriod).map((option) => (
+                  {["This Week", "This Month", "This Year"].map((option) => (
                     <button type="button" key={option} onClick={() => selectPeriod(option)}>{option}</button>
                   ))}
                 </div>
@@ -131,30 +115,31 @@ function Dashboard() {
                 <CartesianGrid stroke="#e5e7eb" strokeDasharray="3 4" vertical={false} />
                 <XAxis dataKey="name" tickLine={false} axisLine={false} tick={{ fill: "#677285", fontSize: 13 }} />
                 <YAxis tickLine={false} axisLine={false} tick={{ fill: "#677285", fontSize: 13 }} />
-                <Tooltip cursor={{ fill: "rgba(67, 86, 216, 0.05)" }} formatter={(value, name) => name.startsWith("Revenue") ? [formatMoney(Number(value) * 100), `Revenue (${currency})`] : [value, name]} />
+                <YAxis yAxisId="revenue" orientation="right" tickFormatter={value=>formatMoney(value)} />
+                <Tooltip cursor={{ fill: "rgba(67, 86, 216, 0.05)" }} formatter={(value, name) => name.startsWith("Revenue") ? [formatMoney(Number(value)), `Revenue (${currency})`] : [value, name]} />
                 <Legend verticalAlign="top" align="right" iconType="circle" wrapperStyle={{ paddingBottom: "18px", fontSize: "13px" }} />
                 <Bar dataKey="units" name="Units Sold" fill="#4a9b8f" barSize={38} />
-                <Line type="monotone" dataKey="revenue" name={`Revenue (${symbol} ×100)`} stroke="#4356d8" strokeWidth={3} dot={{ r: 3, fill: "#4356d8" }} activeDot={{ r: 5 }} />
+                <Line type="monotone" dataKey="revenue" name={`Revenue (${symbol})`} yAxisId="revenue" stroke="#4356d8" strokeWidth={3} dot={{ r: 3, fill: "#4356d8" }} activeDot={{ r: 5 }} />
               </ComposedChart>
             </ResponsiveContainer>
           </div>
         </article>
 
         <article className="dashboard-panel stock-panel">
-          <div className="panel-header"><h2>Stock by Category</h2></div>
+          <div className="panel-header"><h2>Stock by Availability</h2></div>
           <div className="stock-chart">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
-                <Pie data={stockByCategory} dataKey="value" nameKey="name" cx="50%" cy="46%" innerRadius="54%" outerRadius="79%" paddingAngle={1} stroke="none" label={({ value }) => `${value}.0%`} labelLine={false}>
+                <Pie data={stockByCategory} dataKey="value" nameKey="name" cx="50%" cy="46%" innerRadius="54%" outerRadius="79%" paddingAngle={1} stroke="none" label={false} labelLine={false}>
                   {stockByCategory.map((item) => <Cell key={item.name} fill={item.color} />)}
                 </Pie>
                 <Legend iconType="circle" iconSize={10} wrapperStyle={{ fontSize: "13px", bottom: 0 }} />
-                <Tooltip formatter={(value) => `${value}%`} />
+                <Tooltip formatter={(value) => `${value} units`} />
               </PieChart>
             </ResponsiveContainer>
             <div className="donut-center-copy" aria-hidden="true">
               <span>Total Stock</span>
-              <strong>1,248</strong>
+              <strong>{data?.totalStock ?? '—'}</strong>
             </div>
           </div>
         </article>
@@ -162,24 +147,24 @@ function Dashboard() {
 
       <div className="dashboard-detail-grid">
         <article className="dashboard-panel">
-          <div className="panel-header"><h2>Recent Prescriptions</h2><button type="button" className="filter-button">Today <i className="fa-solid fa-chevron-down" /></button></div>
-          <div className="table-scroll"><table className="dashboard-table"><thead><tr><th>Patient</th><th>Medicine</th><th>Prescribed By</th><th>Status</th><th /></tr></thead><tbody>
-            {recentPrescriptions.map(([patient, id, medicine, doctor, status, action, initials]) => <tr key={id}><td><div className="person-cell"><span className="patient-avatar">{initials}</span><span><strong>{patient}</strong><small>{id}</small></span></div></td><td>{medicine}</td><td>{doctor}</td><td><span className={`status-pill ${status.toLowerCase().replaceAll(" ", "-")}`}>{status}</span></td><td><button type="button" className="table-action">{action}</button></td></tr>)}
+          <div className="panel-header"><h2>Recent Prescriptions</h2><span>Latest saved</span></div>
+          <div className="table-scroll"><table className="dashboard-table"><thead><tr><th>Patient</th><th>Medicine</th><th>Prescribed By</th><th>Status</th><th /></tr></thead><tbody>{data && !recentPrescriptions.length && <tr><td colSpan={5}>No prescriptions recorded.</td></tr>}
+            {recentPrescriptions.map(([patient, id, medicine, doctor, status, action, initials]) => <tr key={id}><td><div className="person-cell"><span className="patient-avatar">{initials}</span><span><strong>{patient}</strong><small>{id}</small></span></div></td><td>{medicine}</td><td>{doctor}</td><td><span className={`status-pill ${status.toLowerCase().replaceAll(" ", "-")}`}>{status}</span></td><td><button type="button" className="table-action" onClick={()=>window.location.assign('/dispense')}>{action}</button></td></tr>)}
           </tbody></table></div>
         </article>
         <article className="dashboard-panel">
-          <div className="panel-header"><h2>Expiry Alerts</h2></div><div className="expiry-list">
+          <div className="panel-header"><h2>Expiry Alerts</h2></div><div className="expiry-list">{data && !expiryAlerts.length && <p>No in-stock batches expiring within 30 days.</p>}
             {expiryAlerts.map(([medicine, batch, days, tone]) => <div className="expiry-item" key={medicine}><span className={`alert-icon ${tone}`}><i className="fa-solid fa-clock" /></span><span className="expiry-copy"><strong>{medicine}</strong><small>{batch}</small></span><span className={`expiry-days ${tone}`}>{days}</span></div>)}
-          </div><button type="button" className="panel-link">View All Alerts <i className="fa-solid fa-arrow-right" /></button>
+          </div><button type="button" className="panel-link" onClick={()=>window.location.assign('/medicines')}>View All Alerts <i className="fa-solid fa-arrow-right" /></button>
         </article>
       </div>
 
       <div className="dashboard-detail-grid">
-        <article className="dashboard-panel"><div className="panel-header"><h2>Low Stock Medicines</h2><button type="button" className="panel-link inline-link">Manage Stock</button></div><div className="table-scroll"><table className="dashboard-table"><thead><tr><th>Medicine</th><th>Category</th><th>Available Qty</th><th>Reorder Level</th><th>Supplier</th><th /></tr></thead><tbody>{lowStockMedicines.map(([medicine, category, quantity, reorder, supplier]) => <tr key={medicine}><td><strong>{medicine}</strong></td><td>{category}</td><td>{quantity}</td><td>{reorder}</td><td>{supplier}</td><td><button type="button" className="table-action">Reorder</button></td></tr>)}</tbody></table></div></article>
-        <article className="dashboard-panel"><div className="panel-header"><h2>Top Selling Medicines</h2></div><div className="top-selling-list">{topSellingMedicines.map(([medicine, units, progress]) => <div className="top-selling-item" key={medicine}><div><strong>{medicine}</strong><span>{units}</span></div><span className="sales-progress"><span style={{ width: `${progress}%` }} /></span></div>)}</div></article>
+        <article className="dashboard-panel"><div className="panel-header"><h2>Low Stock Medicines</h2><button type="button" className="panel-link inline-link" onClick={()=>window.location.assign('/stock-management')}>Manage Stock</button></div><div className="table-scroll"><table className="dashboard-table"><thead><tr><th>Medicine</th><th>Batch</th><th>Available Qty</th><th>Reorder Level</th><th>Supplier</th><th /></tr></thead><tbody>{data && !lowStockMedicines.length && <tr><td colSpan={6}>No low-stock medicines.</td></tr>}{lowStockMedicines.map(([medicine, category, quantity, reorder, supplier]) => <tr key={medicine}><td><strong>{medicine}</strong></td><td>{category}</td><td>{quantity}</td><td>{reorder}</td><td>{supplier}</td><td><button type="button" className="table-action" onClick={()=>window.location.assign('/purchase-orders?new=1')}>Reorder</button></td></tr>)}</tbody></table></div></article>
+        <article className="dashboard-panel"><div className="panel-header"><h2>Top Selling Medicines</h2><span className="dashboard-period-note">All time</span></div><div className="top-selling-list">{data && !topSellingMedicines.length && <p>No completed sales recorded.</p>}{topSellingMedicines.map(([medicine, units, progress]) => <div className="top-selling-item" key={medicine}><div><strong>{medicine}</strong><span>{units}</span></div><span className="sales-progress"><span style={{ width: `${progress}%` }} /></span></div>)}</div></article>
       </div>
 
-      <article className="dashboard-panel suppliers-panel"><div className="panel-header"><h2>Suppliers Overview</h2><button type="button" className="panel-link inline-link">View All</button></div><div className="suppliers-list">{suppliers.map(([name, orders, status, tone]) => <div className="supplier-item" key={name}><span className="supplier-icon"><i className="fa-solid fa-truck-medical" /></span><span><strong>{name}</strong><small>{orders}</small></span><span className={`supplier-status ${tone}`}>{status}</span><button type="button" className="supplier-more" aria-label={`More options for ${name}`}><i className="fa-solid fa-ellipsis" /></button></div>)}</div></article>
+      <article className="dashboard-panel suppliers-panel"><div className="panel-header"><h2>Suppliers Overview</h2><button type="button" className="panel-link inline-link" onClick={()=>window.location.assign('/suppliers')}>View All</button></div><div className="suppliers-list">{suppliers.map(([name, orders, status, tone]) => <div className="supplier-item" key={name}><span className="supplier-icon"><i className="fa-solid fa-truck-medical" /></span><span><strong>{name}</strong><small>{orders}</small></span></div>)}</div></article>
     </section>
   );
 }

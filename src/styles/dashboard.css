@@ -185,3 +185,51 @@
   .sales-chart, .stock-chart { height: 300px; }
   .suppliers-panel { margin-top: 12px; }.suppliers-list { grid-template-columns: 1fr; }.supplier-item { border-right: 0; border-bottom: 1px solid #eef0f3; }.supplier-item:last-child { border-bottom: 0; }
 }
+
+/* Live pharmacy overview: consistent spacing for five metrics and real data. */
+.dashboard-page{max-width:1680px;margin:0 auto;padding:28px;box-sizing:border-box}
+.dashboard-page .dashboard-header{margin-bottom:18px;align-items:center}
+.dashboard-eyebrow{font-size:10px;font-weight:750;letter-spacing:1.8px;color:var(--accent);margin:0 0 8px}
+.dashboard-page .dashboard-header h1{font-size:28px;letter-spacing:-.8px;font-weight:650}
+.dashboard-subtitle{font-size:13px;color:var(--text-muted);margin:8px 0 0}
+.dashboard-page .dashboard-buttons button{border-radius:9px;min-height:40px;font-size:12px;padding:10px 14px}
+.dashboard-update{display:flex;align-items:center;gap:7px;font-size:11px;color:var(--text-muted);margin:0 0 20px}
+.dashboard-update-dot{width:6px;height:6px;flex-shrink:0;border-radius:50%;background:var(--accent)}
+.dashboard-update.has-error{color:#a13d35}.dashboard-update.has-error .dashboard-update-dot{background:#a13d35}
+.dashboard-page .dashboard-cards{grid-template-columns:repeat(5,minmax(0,1fr));gap:14px;margin-bottom:22px}
+.dashboard-page .dashboard-card{min-height:150px;padding:18px;border-radius:13px;border:1px solid var(--border);box-shadow:none;display:flex;flex-direction:column;justify-content:space-between}
+.dashboard-page .dashboard-card>div{padding-right:0}
+.dashboard-page .stat-label{font-size:12px;padding-right:30px;min-height:32px}
+.dashboard-page .stat-value-row{margin-top:8px}
+.dashboard-page .stat-value-row strong{font-size:28px;font-weight:650;letter-spacing:-.8px;overflow-wrap:anywhere}
+.dashboard-page .stat-icon{width:28px;height:28px;right:14px;top:14px;border-radius:8px;font-size:12px;background:var(--accent-bg);color:var(--accent)}
+.dashboard-page .stat-icon.yellow{background:#fff5dc;color:#9a741d}.dashboard-page .stat-icon.red{background:#fff0ed;color:#b24e42}.dashboard-page .stat-icon.sky{background:#edf4ff;color:#5277af}
+.dashboard-page .stat-note{position:static;margin-top:12px;font-size:10px;line-height:1.5}
+.dashboard-page .dashboard-card-sales{background:var(--accent-bg);border-color:var(--accent-border)}
+.dashboard-page .dashboard-card-sales .stat-value-row strong{color:var(--accent)}
+.dashboard-page .dashboard-panel{border-radius:14px;border:1px solid var(--border);box-shadow:none;overflow:hidden;min-width:0}
+.dashboard-page .panel-header{padding:20px;gap:12px;min-height:65px;box-sizing:border-box;flex-wrap:wrap}
+.dashboard-page .panel-header h2{font-size:15px;letter-spacing:-.2px;font-weight:650}
+.dashboard-page .panel-header>span{font-size:11px;color:var(--text-muted)}
+.dashboard-page .dashboard-chart-grid{grid-template-columns:minmax(0,1.7fr) minmax(280px,1fr);gap:20px}
+.dashboard-page .sales-chart,.dashboard-page .stock-chart{height:280px}
+.dashboard-page .filter-button{border-radius:7px;font-size:11px;background:var(--surface-muted);border-color:var(--border)}
+.dashboard-page .chart-filter .dropdown-menu{z-index:5}
+.dashboard-page .dashboard-table{font-size:12px;white-space:normal;min-width:560px}
+.dashboard-page .dashboard-table th{font-size:10px;white-space:nowrap;padding:12px 16px;font-weight:650}
+.dashboard-page .dashboard-table td{padding:14px 16px;line-height:1.5;overflow-wrap:anywhere}
+.dashboard-page .dashboard-table td:first-child{min-width:135px}
+.dashboard-page .dashboard-table td:nth-child(2){max-width:200px}
+.dashboard-page .patient-avatar{flex-shrink:0;background:var(--accent-bg);color:var(--accent)}
+.dashboard-page .expiry-list>p,.dashboard-page .top-selling-list>p{padding:24px 0;font-size:12px;color:var(--text-muted);line-height:1.6}
+.dashboard-page .sales-progress span{background:var(--accent)}
+.dashboard-page .top-selling-item{padding:14px 0}
+.dashboard-page .suppliers-list{grid-template-columns:repeat(auto-fit,minmax(180px,1fr))}
+.dashboard-page .supplier-item{grid-template-columns:32px minmax(0,1fr);padding:16px;gap:12px;min-height:80px}
+.dashboard-page .supplier-icon{background:var(--accent-bg);color:var(--accent)}
+.dashboard-page .supplier-item small{font-size:10px}
+@media(max-width:1200px){.dashboard-page .dashboard-cards{grid-template-columns:repeat(3,minmax(0,1fr))}.dashboard-page .dashboard-detail-grid{grid-template-columns:1fr}.dashboard-page .dashboard-card{min-height:135px}}
+@media(max-width:900px){.dashboard-page .dashboard-chart-grid{grid-template-columns:1fr}.dashboard-page .dashboard-header{align-items:flex-start;flex-direction:column}.dashboard-page .dashboard-cards{grid-template-columns:repeat(2,minmax(0,1fr))}.dashboard-page .dashboard-card-sales{grid-column:1/-1}}
+@media(max-width:540px){.dashboard-page{padding:18px 14px}.dashboard-page .dashboard-header h1{font-size:24px}.dashboard-page .dashboard-buttons{flex-wrap:wrap}.dashboard-page .dashboard-buttons button{font-size:11px}.dashboard-page .dashboard-cards{gap:10px}.dashboard-page .dashboard-card{padding:14px}.dashboard-page .stat-value-row strong{font-size:25px}.dashboard-page .stat-label{font-size:11px}.dashboard-page .panel-header{padding:16px}.dashboard-page .sales-chart{height:260px}.dashboard-page .suppliers-list{grid-template-columns:1fr}}
+.dashboard-page .stat-icon.blue{background:var(--accent-bg);color:var(--accent)}
+.dashboard-page .stat-icon i{color:inherit}

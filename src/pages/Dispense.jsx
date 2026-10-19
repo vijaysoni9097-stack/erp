@@ -34,6 +34,11 @@ export default function Dispense({profile}) {
   const [pending, setPending] = useState(null);
   const submitting = useRef(false);
   const billRef = useRef(null);
+  const receiptRef = useRef(null);
+
+  useEffect(() => {
+    if (receipt) receiptRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, [receipt]);
   const locked = busy || Boolean(pending);
 
   useEffect(() => {
@@ -74,7 +79,7 @@ export default function Dispense({profile}) {
 
   function add(medicine) {
     if(locked) return;
-    setReceipt(null); setError(''); setPaymentConfirmed(false);
+    setError(''); setPaymentConfirmed(false);
     setCart(items => {
       const existing = items.find(item => item.id === medicine.id);
       if(existing) return items.map(item => item.id === medicine.id ? {...item,quantity:Math.min(item.quantity+1,medicine.stock_quantity)} : item);
@@ -105,7 +110,7 @@ export default function Dispense({profile}) {
   return <div className="dispense-page">
     <header className="dispense-heading"><div><p className="dispense-kicker">PHARMACIST WORKSPACE</p><h1>Good care. Clear checkout.</h1><p>Welcome, {profile.first_name}. Prepare your next medicine sale.</p></div><div className="dispense-date"><i className="fa-regular fa-calendar" aria-hidden="true" />{new Date().toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'})}<span><span className="dispense-dot" /> Dispensing counter</span></div></header>
     <TodaySales medicines={medicines} refreshKey={reload} />
-    {receipt && <section className="dispense-success" role="status"><i className="fa-solid fa-circle-check" aria-hidden="true" /><div><strong>Sale #{receipt.id} completed</strong><p>{receipt.patient} · {receipt.items.reduce((n,item)=>n+item.quantity,0)} units · Total {money(receipt.total_amount)}. Stock has been updated.</p>{receipt.payment && <p>Paid by {receipt.payment.method.replace('_',' ')} · Received {money(receipt.payment.tendered)}{Number(receipt.payment.change)>0 ? ` · Change due ${money(receipt.payment.change)}` : ''}{receipt.payment.reference ? ` · Ref: ${receipt.payment.reference}` : ''}</p>}</div><button type="button" className="dispense-print" onClick={()=>printInvoice(receipt,medicines,money)}><i className="fa-solid fa-print" aria-hidden="true" /> Print bill</button><button onClick={()=>setReceipt(null)} aria-label="Dismiss sale confirmation">×</button></section>}
+
     <div className="dispense-layout">
       <section className="dispense-catalog"><div className="dispense-section-title"><div><span className="dispense-step">01</span><h2>Select medicines</h2></div><button className="dispense-refresh" disabled={loading || locked} onClick={()=>setReload(v=>v+1)}><i className="fa-solid fa-rotate" aria-hidden="true" /> Refresh stock</button></div>
         <label className="dispense-search"><i className="fa-solid fa-magnifying-glass" aria-hidden="true" /><input autoFocus aria-label="Search available medicines" placeholder="Search medicine, generic name, SKU or batch…" value={search} onChange={e=>setSearch(e.target.value)} /></label>
@@ -116,6 +121,7 @@ export default function Dispense({profile}) {
         })}</div>{matches.length>40 && <p className="dispense-hint">Showing 40 of {matches.length} matches. Search to find a specific medicine.</p>}</> : <div className="dispense-empty"><i className="fa-solid fa-box-open" aria-hidden="true" /><h3>{search ? 'No matching medicines' : 'No saleable stock yet'}</h3><p>{search ? 'Try a medicine name, SKU or batch number.' : 'Receive and allocate stock to start selling. Expired medicines are excluded.'}</p></div>}
       </section>
       <form ref={billRef} className="dispense-bill" onSubmit={checkout}>
+    {receipt && <section className="dispense-success dispense-receipt" ref={receiptRef} role="status"><i className="fa-solid fa-circle-check" aria-hidden="true" /><div><strong>Invoice INV-{String(receipt.id).padStart(6, '0')} generated</strong><p>{receipt.patient} · {receipt.items.reduce((n,item)=>n+item.quantity,0)} units · Total {money(receipt.total_amount)}. Stock has been updated.</p>{receipt.payment && <p>Paid by {receipt.payment.method.replace('_',' ')} · Received {money(receipt.payment.tendered)}{Number(receipt.payment.change)>0 ? ` · Change due ${money(receipt.payment.change)}` : ''}{receipt.payment.reference ? ` · Ref: ${receipt.payment.reference}` : ''}</p>}</div><button type="button" className="dispense-print" onClick={()=>printInvoice(receipt,medicines,money)}><i className="fa-solid fa-print" aria-hidden="true" /> Print / Save PDF</button><p className="dispense-print-help">No printer available? Choose “Save as PDF” in the print dialog to save your bill.</p><button type="button" className="dispense-receipt-dismiss" onClick={()=>setReceipt(null)} aria-label="Dismiss sale confirmation">×</button></section>}
         <div className="dispense-section-title"><div><span className="dispense-step">02</span><h2>Patient & bill</h2></div><span className="dispense-draft">New sale</span></div>
         <fieldset disabled={locked}><label className="dispense-field">Patient name <span>*</span><input required minLength={2} maxLength={150} value={patient} onChange={e=>setPatient(e.target.value)} placeholder="Enter patient's full name" autoComplete="off" /></label><label className="dispense-field">Prescribed by <span>*</span><input required minLength={2} maxLength={150} list="dispense-doctors" value={prescriber} onChange={e=>setPrescriber(e.target.value)} placeholder="Select or type doctor's name" autoComplete="off" /><datalist id="dispense-doctors">{doctors.map(name=><option key={name} value={name} />)}</datalist></label></fieldset>
         <p className="dispense-hint">{doctorError ? 'Doctor suggestions are unavailable. Enter the prescriber’s name manually.' : 'Choose a known prescriber or enter an external doctor’s name.'}</p>

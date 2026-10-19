@@ -38,14 +38,14 @@ export default function Suppliers() {
     try {
       const { data } = editing === 'new' ? await api.post('/suppliers', draft) : await api.put(`/suppliers/${editing}`, draft);
       setSuppliers((current) => [...current.filter((item) => item.id !== data.id), data].sort((a, b) => a.name.localeCompare(b.name)));
-      setEditing(null); setDraft(empty); setNotice('Supplier saved on this computer.');
+      setEditing(null); setDraft(empty); setNotice('Supplier saved on this computer.'); window.dispatchEvent(new Event('erp:suppliers-updated'));
     } catch (err) { setError(message(err)); }
     finally { setBusy(false); }
   }
   async function remove(supplier) {
     if (!window.confirm(`Delete supplier ${supplier.name}?`)) return;
     setBusy(true); setError(''); setNotice('');
-    try { await api.delete(`/suppliers/${supplier.id}`); setSuppliers((current) => current.filter((item) => item.id !== supplier.id)); setNotice('Supplier deleted.'); }
+    try { await api.delete(`/suppliers/${supplier.id}`); setSuppliers((current) => current.filter((item) => item.id !== supplier.id)); setNotice('Supplier deleted.'); window.dispatchEvent(new Event('erp:suppliers-updated')); }
     catch (err) { setError(message(err)); }
     finally { setBusy(false); }
   }

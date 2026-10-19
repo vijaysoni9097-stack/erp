@@ -1,3 +1,4 @@
+import { useCurrency } from '../contexts/CurrencyContext';
 import { useState } from "react";
 import "../styles/dashboard.css";
 import {
@@ -68,6 +69,7 @@ const topSellingMedicines = [["Paracetamol 500mg", "312 units", 100], ["Amoxicil
 const suppliers = [["MedSupply Co.", "18 orders this month", "On Time", "on-time"], ["PharmaCare Ltd.", "11 orders this month", "Delayed", "delayed"], ["Wellness Distributors", "7 orders this month", "On Time", "on-time"], ["Pharma Distributors", "5 orders this month", "Delayed", "delayed"]];
 
 function Dashboard() {
+  const { currency, symbol, formatMoney } = useCurrency();
   const [isPeriodMenuOpen, setIsPeriodMenuOpen] = useState(false);
   const [period, setPeriod] = useState("This Week");
 
@@ -129,10 +131,10 @@ function Dashboard() {
                 <CartesianGrid stroke="#e5e7eb" strokeDasharray="3 4" vertical={false} />
                 <XAxis dataKey="name" tickLine={false} axisLine={false} tick={{ fill: "#677285", fontSize: 13 }} />
                 <YAxis tickLine={false} axisLine={false} tick={{ fill: "#677285", fontSize: 13 }} />
-                <Tooltip cursor={{ fill: "rgba(67, 86, 216, 0.05)" }} />
+                <Tooltip cursor={{ fill: "rgba(67, 86, 216, 0.05)" }} formatter={(value, name) => name.startsWith("Revenue") ? [formatMoney(Number(value) * 100), `Revenue (${currency})`] : [value, name]} />
                 <Legend verticalAlign="top" align="right" iconType="circle" wrapperStyle={{ paddingBottom: "18px", fontSize: "13px" }} />
                 <Bar dataKey="units" name="Units Sold" fill="#4a9b8f" barSize={38} />
-                <Line type="monotone" dataKey="revenue" name="Revenue ($00s)" stroke="#4356d8" strokeWidth={3} dot={{ r: 3, fill: "#4356d8" }} activeDot={{ r: 5 }} />
+                <Line type="monotone" dataKey="revenue" name={`Revenue (${symbol} ×100)`} stroke="#4356d8" strokeWidth={3} dot={{ r: 3, fill: "#4356d8" }} activeDot={{ r: 5 }} />
               </ComposedChart>
             </ResponsiveContainer>
           </div>

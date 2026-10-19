@@ -1,3 +1,4 @@
+import { useCurrency } from '../contexts/CurrencyContext';
 import React from 'react';
 import '../styles/Orders.css';
 
@@ -15,7 +16,7 @@ const orders = [
     product: 'Amoxicillin 250mg x 300',
     date: '26 May 2025',
     status: 'Pending',
-    amount: '$860',
+    amount: 860,
     priority: 'High',
   },
   {
@@ -24,7 +25,7 @@ const orders = [
     product: 'Ibuprofen 400mg x 800',
     date: '24 May 2025',
     status: 'Approved',
-    amount: '$2,100',
+    amount: 2100,
     priority: 'Normal',
   },
   {
@@ -33,7 +34,7 @@ const orders = [
     product: 'Insulin Vials x 100',
     date: '22 May 2025',
     status: 'In Transit',
-    amount: '$1,850',
+    amount: 1850,
     priority: 'Urgent',
   },
   {
@@ -42,7 +43,7 @@ const orders = [
     product: 'Cough Syrup 100ml x 200',
     date: '20 May 2025',
     status: 'Delivered',
-    amount: '$640',
+    amount: 640,
     priority: 'Normal',
   },
   {
@@ -51,7 +52,7 @@ const orders = [
     product: 'Aspirin 500mg x 500',
     date: '18 May 2025',
     status: 'Rejected',
-    amount: '$420',
+    amount: 420,
     priority: 'Low',
   },
   {
@@ -60,7 +61,7 @@ const orders = [
     product: 'Vitamin C 1000mg x 100',
     date: '16 May 2025',
     status: 'Pending',
-    amount: '$280',
+    amount: 280,
     priority: 'Normal',
   },
   {
@@ -69,7 +70,7 @@ const orders = [
     product: 'Antibiotic Tabs x 1000',
     date: '14 May 2025',
     status: 'Approved',
-    amount: '$1,560',
+    amount: 1560,
     priority: 'High',
   },
   {
@@ -78,12 +79,13 @@ const orders = [
     product: 'Injectable 10ml x 50',
     date: '12 May 2025',
     status: 'Delivered',
-    amount: '$950',
+    amount: 950,
     priority: 'Urgent',
   },
 ];
 
 function Orders() {
+  const { formatMoney } = useCurrency();
   return (
     <div className="orders-page">
       <header className="orders-header">
@@ -153,7 +155,7 @@ function Orders() {
                   <td>
                     <span className={`priority-pill ${order.priority.toLowerCase()}`}>{order.priority}</span>
                   </td>
-                  <td className="amount-cell">{order.amount}</td>
+                  <td className="amount-cell">{formatMoney(order.amount)}</td>
                 </tr>
               ))}
             </tbody>

@@ -19,6 +19,7 @@ import Login from './pages/Login'
 import Users from './pages/Users'
 import Sync from './pages/Sync'
 import BackgroundSync from './components/BackgroundSync'
+import { CurrencyProvider } from './contexts/CurrencyContext'
 import PasswordRecovery from './pages/PasswordRecovery'
 import 'bootstrap/dist/css/bootstrap.min.css'
 import '@fortawesome/fontawesome-free/css/all.min.css'
@@ -123,7 +124,7 @@ function App() {
   }
 
   return (
-    <div className="app">
+    <CurrencyProvider key={profile.id} profile={profile}><div className="app">
       <BackgroundSync key={profile.id} />
       <Navbar profile={profile} onToggleSidebar={handleToggleSidebar} onLogout={handleLogout} />
       {sessionError && <p role="alert">{sessionError}</p>}
@@ -158,7 +159,7 @@ function App() {
           </Routes>
         </main> 
       </div>
-    </div>
+    </div></CurrencyProvider>
   )
 }
 

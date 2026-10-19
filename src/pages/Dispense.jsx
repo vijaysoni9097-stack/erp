@@ -1,8 +1,8 @@
+import { useCurrency } from '../contexts/CurrencyContext';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { api } from '../services/api';
 import '../styles/Dispense.css';
 
-const money = value => Number(value).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2});
 const today = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; };
 const available = medicine => medicine.stock_quantity > 0 && medicine.expiry_date >= today();
 function errorText(error) {
@@ -11,6 +11,7 @@ function errorText(error) {
 }
 
 export default function Dispense({profile}) {
+  const { formatMoney: money } = useCurrency();
   const [medicines, setMedicines] = useState([]);
   const [doctors, setDoctors] = useState([]);
   const [loading, setLoading] = useState(true);

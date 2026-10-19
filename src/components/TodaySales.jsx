@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { api } from '../services/api';
+import { printInvoice } from '../services/printInvoice';
 import { useCurrency } from '../contexts/CurrencyContext';
 import { dayKey, hasCollection, saleDate, summarizeDailySales } from '../services/dailySales';
 import '../styles/TodaySales.css';
@@ -68,6 +69,7 @@ export default function TodaySales({ medicines, refreshKey }) {
       <header className="today-sales-header"><div><p className="today-sales-eyebrow">{new Date(`${day}T12:00:00`).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })} · Completed sales</p><h2 id="today-sales-title" ref={detailTitle} tabIndex={-1}>{invoice ? invoiceNumber(invoice) : 'Today’s invoices'}</h2></div><button type="button" className="today-sales-close" aria-label="Close sales summary" onClick={() => dialog.current.close()}><i className="fa-solid fa-xmark" aria-hidden="true" /></button></header>
       {loading ? <p className="today-sales-state" role="status">Loading today’s invoices…</p> : error ? <div className="today-sales-state" role="alert"><p>{error}</p><button type="button" onClick={refresh}>Retry</button></div> : invoice ? <>
         <button type="button" className="today-sales-back" onClick={backToInvoices}><i className="fa-solid fa-arrow-left" aria-hidden="true" /> All of today’s invoices</button>
+        <button type="button" className="today-sales-refresh" onClick={() => printInvoice(invoice, medicines, money)}><i className="fa-solid fa-print" aria-hidden="true" /> Print bill</button>
         <div className="today-sales-invoice-meta"><span>Time: <strong>{timeLabel(invoice)}</strong></span><span>Payment: <strong>{paymentLabel(invoice.payment?.method)}</strong></span><span>Status: <strong>Completed</strong></span></div>
         <div className="today-sales-table-wrap"><table className="today-sales-table"><caption className="visually-hidden">Medicines sold on {invoiceNumber(invoice)}</caption><thead><tr><th scope="col">Medicine / batch</th><th scope="col" className="today-sales-number">Qty</th><th scope="col" className="today-sales-number">Unit price</th><th scope="col" className="today-sales-number">Amount</th></tr></thead><tbody>{invoice.items.map(item => {
           const medicine = catalog.get(item.medicine_id);

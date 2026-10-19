@@ -2,6 +2,7 @@ import { useCurrency } from '../contexts/CurrencyContext';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { api } from '../services/api';
 import TodaySales from '../components/TodaySales';
+import { printInvoice } from '../services/printInvoice';
 import '../styles/Dispense.css';
 
 const today = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; };
@@ -87,7 +88,7 @@ export default function Dispense({profile}) {
   }
   async function checkout(event) {
     event.preventDefault();
-    if(submitting.current || (!pending && (!cart.length || invalid || !paymentValid || !patient.trim() || !prescriber.trim()))) return;
+    if(submitting.current || !paymentConfirmed || (!pending && (!cart.length || invalid || !paymentValid || !patient.trim() || !prescriber.trim()))) return;
     const payload = pending || {request_id:crypto.randomUUID(),patient_name:patient.trim(),prescribed_by:prescriber.trim(),payment:{method:paymentMethod,tendered:tendered.toFixed(2),reference:paymentMethod === 'cash' ? null : paymentReference.trim(),confirmed:paymentConfirmed},items:cart.map(item => ({medicine_id:item.id,quantity:item.quantity}))};
     submitting.current = true; setBusy(true); setPending(payload); setError('');
     try {
@@ -104,7 +105,7 @@ export default function Dispense({profile}) {
   return <div className="dispense-page">
     <header className="dispense-heading"><div><p className="dispense-kicker">PHARMACIST WORKSPACE</p><h1>Good care. Clear checkout.</h1><p>Welcome, {profile.first_name}. Prepare your next medicine sale.</p></div><div className="dispense-date"><i className="fa-regular fa-calendar" aria-hidden="true" />{new Date().toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'})}<span><span className="dispense-dot" /> Dispensing counter</span></div></header>
     <TodaySales medicines={medicines} refreshKey={reload} />
-    {receipt && <section className="dispense-success" role="status"><i className="fa-solid fa-circle-check" aria-hidden="true" /><div><strong>Sale #{receipt.id} completed</strong><p>{receipt.patient} · {receipt.items.reduce((n,item)=>n+item.quantity,0)} units · Total {money(receipt.total_amount)}. Stock has been updated.</p>{receipt.payment && <p>Paid by {receipt.payment.method.replace('_',' ')} · Received {money(receipt.payment.tendered)}{Number(receipt.payment.change)>0 ? ` · Change due ${money(receipt.payment.change)}` : ''}{receipt.payment.reference ? ` · Ref: ${receipt.payment.reference}` : ''}</p>}</div><button onClick={()=>setReceipt(null)} aria-label="Dismiss sale confirmation">×</button></section>}
+    {receipt && <section className="dispense-success" role="status"><i className="fa-solid fa-circle-check" aria-hidden="true" /><div><strong>Sale #{receipt.id} completed</strong><p>{receipt.patient} · {receipt.items.reduce((n,item)=>n+item.quantity,0)} units · Total {money(receipt.total_amount)}. Stock has been updated.</p>{receipt.payment && <p>Paid by {receipt.payment.method.replace('_',' ')} · Received {money(receipt.payment.tendered)}{Number(receipt.payment.change)>0 ? ` · Change due ${money(receipt.payment.change)}` : ''}{receipt.payment.reference ? ` · Ref: ${receipt.payment.reference}` : ''}</p>}</div><button type="button" className="dispense-print" onClick={()=>printInvoice(receipt,medicines,money)}><i className="fa-solid fa-print" aria-hidden="true" /> Print bill</button><button onClick={()=>setReceipt(null)} aria-label="Dismiss sale confirmation">×</button></section>}
     <div className="dispense-layout">
       <section className="dispense-catalog"><div className="dispense-section-title"><div><span className="dispense-step">01</span><h2>Select medicines</h2></div><button className="dispense-refresh" disabled={loading || locked} onClick={()=>setReload(v=>v+1)}><i className="fa-solid fa-rotate" aria-hidden="true" /> Refresh stock</button></div>
         <label className="dispense-search"><i className="fa-solid fa-magnifying-glass" aria-hidden="true" /><input autoFocus aria-label="Search available medicines" placeholder="Search medicine, generic name, SKU or batch…" value={search} onChange={e=>setSearch(e.target.value)} /></label>
@@ -130,7 +131,7 @@ export default function Dispense({profile}) {
         {invalid && <p className="dispense-error" role="alert">Check quantities: each must be a whole number within available stock.</p>}
         {error && <p className="dispense-error" role="alert">{error}</p>}
         {pending && !busy && <p className="dispense-hint">Keep this page open and retry this bill to confirm its status without creating a duplicate.</p>}
-        <button className="dispense-checkout" type="submit" disabled={busy || (!pending && (loading || Boolean(loadError) || !cart.length || invalid || !paymentValid))}>{busy ? 'Confirming sale…' : pending ? 'Retry / confirm this sale' : `Complete paid sale · ${money(total)}`} <i className="fa-solid fa-arrow-right" aria-hidden="true" /></button>
+        <button className="dispense-checkout" type="submit" disabled={busy || !paymentConfirmed || (!pending && (loading || Boolean(loadError) || !cart.length || invalid || !paymentValid))}>{busy ? 'Confirming sale…' : pending ? 'Retry / confirm this sale' : `Complete paid sale · ${money(total)}`} <i className="fa-solid fa-arrow-right" aria-hidden="true" /></button>
         <p className="dispense-footer-note"><i className="fa-solid fa-shield-halved" aria-hidden="true" /> Stock and final prices are checked when you complete the sale.</p>
       </form>
     </div>

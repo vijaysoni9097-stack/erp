@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { api } from '../services/api';
 import '../styles/Medicines.css';
 
@@ -7,6 +7,12 @@ const dateLabel = (value) => value ? new Date(`${value}T00:00:00`).toLocaleDateS
 
 function Medicines() {
   const [adding, setAdding] = useState(false);
+  const addDialog = useRef(null);
+  const saveLock = useRef(false);
+  useEffect(() => {
+    if (adding && !addDialog.current.open) addDialog.current.showModal();
+    else if (!adding && addDialog.current.open) addDialog.current.close();
+  }, [adding]);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState('');
   const [notice, setNotice] = useState('');
@@ -48,12 +54,13 @@ function Medicines() {
 
   async function addMedicine(event) {
     event.preventDefault();
-    if (saving) return;
+    if (saveLock.current) return;
     const form = event.currentTarget;
     const values = Object.fromEntries(new FormData(form));
     const payload = { ...values, supplier_id: values.supplier_id ? Number(values.supplier_id) : null,
       generic_name: values.generic_name || null, stock_quantity: 0,
       reorder_level: Number(values.reorder_level), purchase_price: Number(values.purchase_price), selling_price: Number(values.selling_price) };
+    saveLock.current = true;
     setSaving(true); setSaveError(''); setNotice('');
     try {
       const { data } = await api.post('/medicines', payload, { timeout: 90000 });
@@ -63,7 +70,7 @@ function Medicines() {
     } catch (err) {
       const detail = err.response?.data?.detail;
       setSaveError(typeof detail === 'string' ? detail : Array.isArray(detail) ? detail.map(e => e.msg).join(' ') : 'Could not confirm the save. Refresh and check the SKU before retrying.');
-    } finally { setSaving(false); }
+    } finally { saveLock.current = false; setSaving(false); }
   }
 
   const today = new Date();
@@ -95,21 +102,12 @@ function Medicines() {
     <div className="medicines-page">
       <header className="medicines-header">
         <div><p className="eyebrow">Pharmacy Inventory</p><h1>Medicines</h1></div>
-        <button type="button" className="primary-btn" onClick={() => { setAdding(true); setSaveError(''); }}>Add Medicine</button>
-        <button type="button" className="secondary-btn" disabled={loading} onClick={() => setReload(v => v + 1)}>Refresh</button>
+        <div className="medicines-header-actions">
+          <button type="button" className="secondary-btn" disabled={loading} onClick={() => setReload(v => v + 1)}>Refresh</button>
+          <button type="button" className="primary-btn" aria-haspopup="dialog" aria-controls="add-medicine-dialog" onClick={() => { setAdding(true); setSaveError(''); }}><i className="fa-solid fa-plus" aria-hidden="true" /> Add Medicine</button>
+        </div>
       </header>
-      {notice && <p role="status">{notice}</p>}
-      {adding && <section className="medicines-panel"><form onSubmit={addMedicine} style={{padding: 20}}>
-        <h2>Add Medicine</h2>
-        {saveError && <p role="alert">{saveError}</p>}
-        <fieldset disabled={saving} style={{border: 0, display: 'grid', gap: 12, gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))'}}>
-          {[['name','Medicine Name','text',150],['generic_name','Generic Name','text',150],['sku','SKU','text',50],['batch_number','Batch Number','text',80],['expiry_date','Expiry Date','date'],['purchase_price','Purchase Price','number'],['selling_price','Selling Price','number'],['reorder_level','Reorder Level','number']].map(([key,label,type,max]) => <label key={key}>{label}<input name={key} type={type} required={key !== 'generic_name'} maxLength={max} minLength={['name','sku'].includes(key) ? 2 : undefined} min={type === 'number' ? 0 : undefined} step={key.includes('price') ? '0.01' : type === 'number' ? '1' : undefined} defaultValue={key === 'reorder_level' ? 10 : undefined} style={{display:'block',width:'100%'}} /></label>)}
-          <label>Supplier<select name="supplier_id" style={{display:'block',width:'100%'}}><option value="">No supplier</option>{Object.entries(suppliers).map(([id,name]) => <option key={id} value={id}>{name}</option>)}</select></label>
-        </fieldset>
-        <p>The medicine starts with zero stock. Receive stock separately before selling.</p>
-        <button type="submit" className="primary-btn" disabled={saving}>{saving ? 'Saving…' : 'Save Medicine'}</button>{' '}
-        <button type="button" className="secondary-btn" disabled={saving} onClick={() => setAdding(false)}>Cancel</button>
-      </form></section>}
+      {notice && <p className="medicine-save-notice" role="status">{notice}</p>}
       <section className="summary-grid" aria-label="Medicine summary statistics">
         {cards.map(card => <article key={card.label} className="summary-card">
           <div className="summary-copy"><p>{card.label}</p><div className="summary-row"><strong>{loading || error ? '—' : card.value.toLocaleString()}</strong></div></div>
@@ -135,6 +133,21 @@ function Medicines() {
           <div className="panel-head"><span>Page {currentPage} of {pages}</span><div className="panel-head-actions"><button className="ghost-btn" disabled={currentPage <= 1} onClick={() => setPage(currentPage - 1)}>Previous</button><button className="ghost-btn" disabled={currentPage >= pages} onClick={() => setPage(currentPage + 1)}>Next</button></div></div>
         </>}
       </section>
+      <dialog id="add-medicine-dialog" ref={addDialog} className="add-medicine-dialog" aria-labelledby="add-medicine-title" onClose={() => setAdding(false)} onCancel={event => { if (saveLock.current) event.preventDefault(); }}>
+        {adding && <form onSubmit={addMedicine}>
+          <header className="add-medicine-dialog-header"><div><p>Pharmacy Inventory</p><h2 id="add-medicine-title">Add Medicine</h2></div><button type="button" className="add-medicine-close" aria-label="Close Add Medicine" disabled={saving} onClick={() => setAdding(false)}><i className="fa-solid fa-xmark" aria-hidden="true" /></button></header>
+          <div className="add-medicine-dialog-body">
+            {saveError && <p className="add-medicine-error" role="alert">{saveError}</p>}
+            <fieldset disabled={saving} className="add-medicine-fields">
+              {[['name','Medicine Name','text',150],['generic_name','Generic Name','text',150],['sku','SKU','text',50],['batch_number','Batch Number','text',80],['expiry_date','Expiry Date','date'],['purchase_price','Purchase Price','number'],['selling_price','Selling Price','number'],['reorder_level','Reorder Level','number']].map(([key,label,type,max]) => <label key={key}>{label}{key === 'generic_name' && ' (optional)'}<input autoFocus={key === 'name'} name={key} type={type} required={key !== 'generic_name'} maxLength={max} minLength={['name','sku'].includes(key) ? 2 : undefined} min={type === 'number' ? 0 : undefined} step={key.includes('price') ? '0.01' : type === 'number' ? '1' : undefined} defaultValue={key === 'reorder_level' ? 10 : undefined} /></label>)}
+              <label>Supplier<select name="supplier_id"><option value="">No supplier</option>{Object.entries(suppliers).map(([id,name]) => <option key={id} value={id}>{name}</option>)}</select></label>
+            </fieldset>
+            {supplierError && <p className="add-medicine-note" role="status">Supplier options are unavailable. Close this form and refresh to reload them, or save without a supplier.</p>}
+            <p className="add-medicine-note">The medicine starts with zero stock. Receive stock separately before selling.</p>
+          </div>
+          <footer className="add-medicine-dialog-footer"><button type="button" className="secondary-btn" disabled={saving} onClick={() => setAdding(false)}>Cancel</button><button type="submit" className="primary-btn" disabled={saving}>{saving ? 'Saving…' : 'Save Medicine'}</button></footer>
+        </form>}
+      </dialog>
     </div>
   );
 }

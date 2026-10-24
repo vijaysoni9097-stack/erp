@@ -81,17 +81,17 @@ export default function StockManagement() {
     <header className="inventory-header"><div><p className="eyebrow">Inventory</p><h1>Stock Management</h1></div><div className="panel-head-actions"><ReceiveStock onReceived={message => { setNotice(message); setReload(v => v + 1); }} /><button className="secondary-btn" disabled={loading} onClick={() => setReload(v => v + 1)}>Refresh</button></div></header>
     {notice && <p className="stock-notice" role="status">{notice}</p>}
     <section className="summary-grid" aria-label="Stock summary">{cards.map(([label, value, tone, icon]) => <article key={label} className="summary-card"><div className="summary-copy"><p>{label}</p><div className="summary-row"><strong>{loading || error ? '—' : value.toLocaleString()}</strong></div></div><span className={`summary-icon ${tone}`}><i className={`fa-solid ${icon}`} /></span></article>)}</section>
-    <section className="inventory-panel"><div className="panel-head"><h2>Stock Inventory</h2><div className="panel-head-actions">
-      <input aria-label="Search stock" placeholder="Search medicine or item code" value={search} onChange={e => { setSearch(e.target.value); setPage(1); }} />
-      <select aria-label="Stock filter" value={filter} onChange={e => { setFilter(e.target.value); setPage(1); }}><option value="all">All Items</option><option value="positive">With Stock</option><option value="zero">Zero Stock</option><option value="review">Needs Review</option></select>
-    </div></div>
+    <section className="inventory-panel"><div className="panel-head stock-inventory-toolbar"><div className="stock-inventory-heading"><h2>Stock Inventory</h2>
     <div className="stock-expiry-filters" role="group" aria-label="Filter by expiry date">
       <label>Expiry from<input type="date" value={expiryFrom} max={expiryTo || undefined} onChange={e => { setExpiryFrom(e.target.value); setPage(1); }} /></label>
       <label>Expiry to<input type="date" value={expiryTo} min={expiryFrom || undefined} onChange={e => { setExpiryTo(e.target.value); setPage(1); }} /></label>
-      {(expiryFrom || expiryTo) && <button type="button" className="ghost-btn" onClick={() => { setExpiryFrom(''); setExpiryTo(''); setPage(1); }}>Clear expiry dates</button>}
-      <span>Choose the same date in both fields to find an exact expiry date.</span>
+      {(expiryFrom || expiryTo) && <button type="button" className="ghost-btn" onClick={() => { setExpiryFrom(''); setExpiryTo(''); setPage(1); }} aria-label="Clear expiry dates" title="Clear expiry dates">Clear</button>}
       {invalidExpiryRange && <p role="alert">Expiry from must be on or before expiry to.</p>}
     </div>
+    </div><div className="panel-head-actions">
+      <input aria-label="Search stock" placeholder="Search medicine or item code" value={search} onChange={e => { setSearch(e.target.value); setPage(1); }} />
+      <select aria-label="Stock filter" value={filter} onChange={e => { setFilter(e.target.value); setPage(1); }}><option value="all">All Items</option><option value="positive">With Stock</option><option value="zero">Zero Stock</option><option value="review">Needs Review</option></select>
+    </div></div>
     {loading ? <p role="status">Loading stock…</p> : error ? <p role="alert">{error} <button onClick={() => setReload(v => v + 1)}>Retry</button></p> : <>
     <div className="table-wrap"><table className="inventory-table"><thead><tr><th>Medicine</th><th>Item Code</th><th>Recorded Qty</th><th>Available on Device</th><th>Expiry Date</th><th>Last Updated</th><th>Status</th><th>Actions</th></tr></thead><tbody>
     {filtered.slice((current - 1) * 50, current * 50).map(r => <tr key={r.source_id}><td><strong>{r.name}</strong></td><td>{r.source_id}</td><td>{r.quantity === null ? 'No record' : r.quantity.toLocaleString()}</td><td>{r.allocated_quantity ?? 'Not imported'}</td><td>{r.expiry_date ? new Date(`${r.expiry_date}T12:00:00`).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : 'Not recorded'}</td><td>{r.source_modified_on ? new Date(r.source_modified_on).toLocaleDateString() : '—'}</td><td>{r.current_quantity === null ? 'Missing stock record' : r.current_quantity < 0 ? 'Negative — review' : r.medicine_id === null ? 'Catalog not imported' : r.current_quantity === 0 ? 'Zero Stock' : 'In Stock'}</td><td><button className="table-action" disabled={r.medicine_id == null || !Number.isSafeInteger(r.allocated_quantity)} title={r.medicine_id == null ? 'Import this item into the catalog first' : 'Adjust stock available on this device'} onClick={() => openAdjustment(r)}>Adjust Stock</button></td></tr>)}

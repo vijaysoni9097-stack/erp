@@ -478,4 +478,14 @@
 }
 .primary-btn:hover:not(:disabled), .primary-button:hover:not(:disabled) { background: var(--accent-hover); }
 
-.stock-expiry-filters{display:flex;align-items:flex-end;flex-wrap:wrap;gap:12px;padding:0 20px 18px}.stock-expiry-filters label{display:grid;gap:6px;font-size:12px;font-weight:600;color:var(--text)}.stock-expiry-filters input{border:1px solid var(--border);border-radius:8px;background:#fff;color:var(--text);padding:9px 12px;font:inherit;min-height:38px}.stock-expiry-filters>span{font-size:11px;color:var(--text-muted);padding-bottom:10px}.stock-expiry-filters>p{flex-basis:100%;color:#a13d35;font-size:12px;margin:0}.stock-expiry-filters input:focus-visible{outline:3px solid var(--focus-ring);outline-offset:2px}@media(max-width:540px){.stock-expiry-filters label{flex:1;min-width:130px}.stock-expiry-filters input{min-width:0;width:100%;box-sizing:border-box}.stock-expiry-filters>span{flex-basis:100%;padding-bottom:0}}
+/* Compact expiry range beside the inventory heading. */
+.stock-inventory-toolbar{gap:20px;flex-wrap:wrap}
+.stock-inventory-heading{display:flex;align-items:center;gap:22px;flex-wrap:wrap;min-width:0}
+.stock-inventory-heading h2{margin:0;white-space:nowrap}
+.stock-expiry-filters{display:flex;align-items:center;flex-wrap:wrap;gap:10px;padding:0}
+.stock-expiry-filters label{display:grid;gap:4px;font-size:10px;font-weight:600;color:var(--text-muted);letter-spacing:.2px}
+.stock-expiry-filters input{border:1px solid var(--border);border-radius:7px;background:var(--surface-muted,#f8fafb);color:var(--text);padding:7px 9px;font:inherit;font-size:12px;min-height:34px;box-sizing:border-box;width:145px}
+.stock-expiry-filters .ghost-btn{align-self:flex-end;min-height:34px;padding:6px 9px;font-size:11px;color:var(--accent)}
+.stock-expiry-filters>p{flex-basis:100%;color:#a13d35;font-size:12px;margin:0}
+.stock-expiry-filters input:focus-visible{outline:3px solid var(--focus-ring);outline-offset:2px}
+@media(max-width:620px){.stock-inventory-heading{gap:14px;width:100%}.stock-expiry-filters{width:100%}.stock-expiry-filters label{flex:1;min-width:120px}.stock-expiry-filters input{width:100%;min-width:0}.stock-inventory-toolbar>.panel-head-actions{width:100%;flex-wrap:wrap}}

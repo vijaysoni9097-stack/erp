@@ -1,7 +1,8 @@
 import { useCurrency } from '../contexts/CurrencyContext';
 import { useEffect, useMemo, useState } from "react";
 import { api } from "../services/api";
-import { dashboardData } from "../services/dashboardData";
+import { dayKey } from '../services/dailySales';
+import { dashboardData, salesTrendForDates } from "../services/dashboardData";
 import "../styles/dashboard.css";
 import {
   Bar,
@@ -20,7 +21,8 @@ import {
 
 function Dashboard() {
   const { currency, symbol, formatMoney } = useCurrency();
-  const [isPeriodMenuOpen, setIsPeriodMenuOpen] = useState(false);
+  const [dateFrom, setDateFrom] = useState(() => { const date = new Date(); date.setDate(1); return dayKey(date); });
+  const [dateTo, setDateTo] = useState(dayKey);
   const [period, setPeriod] = useState("This Week");
 
   const [records, setRecords] = useState(null);
@@ -56,10 +58,10 @@ function Dashboard() {
     {label:'Low Stock Items',value:data.low.length,note:'At or below reorder level',icon:'fa-triangle-exclamation',tone:'red'},
     {label:'Expiring Soon',value:data.expiry.length,note:'In-stock batches within 30 days',icon:'fa-calendar-days',tone:'sky'},
   ] : [];
-  const selectPeriod = (value) => {
-    setPeriod(value);
-    setIsPeriodMenuOpen(false);
-  };
+  const rangeError = period === 'Custom dates' && (!dateFrom || !dateTo || dateFrom > dateTo);
+  const trend = useMemo(() => period === 'Custom dates'
+    ? salesTrendForDates(records?.sales || [], dateFrom, dateTo)
+    : data?.salesByPeriod[period] || [], [records, data, period, dateFrom, dateTo]);
 
   return (
     <section className="dashboard-page">
@@ -96,22 +98,19 @@ function Dashboard() {
         <article className="dashboard-panel sales-panel">
           <div className="panel-header">
             <h2>Medicine Sales Trend</h2>
-            <div className="chart-filter">
-              <button type="button" className="filter-button" onClick={() => setIsPeriodMenuOpen((open) => !open)} aria-expanded={isPeriodMenuOpen}>
-                {period} <i className={`fa-solid fa-chevron-${isPeriodMenuOpen ? "up" : "down"}`} aria-hidden="true" />
-              </button>
-              {isPeriodMenuOpen && (
-                <div className="dropdown-menu">
-                  {["This Week", "This Month", "This Year"].map((option) => (
-                    <button type="button" key={option} onClick={() => selectPeriod(option)}>{option}</button>
-                  ))}
-                </div>
-              )}
+            <div className="trend-controls">
+              <label className="trend-period"><span className="visually-hidden">Sales trend period</span><i className="fa-regular fa-calendar" aria-hidden="true" /><select value={period} onChange={event => setPeriod(event.target.value)}><option value="This Week">This week</option><option value="This Month">This month</option><option value="This Year">This year</option><option value="Custom dates">Custom dates</option></select></label>
             </div>
           </div>
-          <div className="sales-chart">
+          {period === 'Custom dates' && <div className="trend-date-range">
+            <label>From<input type="date" value={dateFrom} max={dateTo || undefined} onChange={event => setDateFrom(event.target.value)} /></label>
+            <span className="trend-date-arrow" aria-hidden="true">→</span>
+            <label>To<input type="date" value={dateTo} min={dateFrom || undefined} onChange={event => setDateTo(event.target.value)} /></label>
+            <span className="trend-date-caption">{rangeError ? 'Choose a valid start and end date.' : 'Completed sales · inclusive dates'}</span>
+          </div>}
+          {rangeError ? <p className="trend-range-error" role="alert">Select both dates, with From on or before To.</p> : <div className="sales-chart">
             <ResponsiveContainer width="100%" height="100%">
-              <ComposedChart data={salesByPeriod[period]} margin={{ top: 28, right: 22, left: -12, bottom: 4 }}>
+              <ComposedChart data={trend} margin={{ top: 28, right: 22, left: -12, bottom: 4 }}>
                 <CartesianGrid stroke="#e5e7eb" strokeDasharray="3 4" vertical={false} />
                 <XAxis dataKey="name" tickLine={false} axisLine={false} tick={{ fill: "#677285", fontSize: 13 }} />
                 <YAxis tickLine={false} axisLine={false} tick={{ fill: "#677285", fontSize: 13 }} />
@@ -122,7 +121,7 @@ function Dashboard() {
                 <Line type="monotone" dataKey="revenue" name={`Revenue (${symbol})`} yAxisId="revenue" stroke="#4356d8" strokeWidth={3} dot={{ r: 3, fill: "#4356d8" }} activeDot={{ r: 5 }} />
               </ComposedChart>
             </ResponsiveContainer>
-          </div>
+          </div>}
         </article>
 
         <article className="dashboard-panel stock-panel">

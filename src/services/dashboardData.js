@@ -50,3 +50,28 @@ export function dashboardData({ medicines, sales, orders, prescriptions, custome
     supplierRows:suppliers.map(s=>{const count=orders.filter(o=>o.supplier_id===s.id&&o.created_at&&dayKey(saleDate(o.created_at)).slice(0,7)===today.slice(0,7)).length;return [s.name,`${count} orders this month`,'','',s.id,count];}).sort((a,b)=>b[5]-a[5]).slice(0,5),
   };
 }
+
+
+export function salesTrendForDates(sales, from, to) {
+  const valid = value => /^\d{4}-\d{2}-\d{2}$/.test(value) && Number.isFinite(new Date(`${value}T12:00:00`).getTime()) && dayKey(new Date(`${value}T12:00:00`)) === value;
+  if (!valid(from) || !valid(to) || from > to) return [];
+  const start = new Date(`${from}T12:00:00`);
+  const end = new Date(`${to}T12:00:00`);
+  const monthly = (end - start) / 86400000 > 92;
+  const buckets = new Map();
+  if (monthly) start.setDate(1);
+  for (const date = new Date(start); dayKey(date) <= to; monthly ? date.setMonth(date.getMonth()+1) : date.setDate(date.getDate()+1)) {
+    const key = dayKey(date).slice(0, monthly ? 7 : 10);
+    buckets.set(key, {name:date.toLocaleDateString('en-IN', monthly ? {month:'short',year:'numeric'} : {day:'numeric',month:'short'}), units:0, revenue:0});
+  }
+  for (const sale of sales) {
+    if (sale.status !== 'completed') continue;
+    const date = saleDate(sale.created_at);
+    if (!Number.isFinite(date.getTime())) continue;
+    const day = dayKey(date);
+    if (day < from || day > to) continue;
+    const bucket = buckets.get(day.slice(0, monthly ? 7 : 10));
+    if (bucket) { bucket.units += sale.items.reduce((sum,item)=>sum+item.quantity,0); bucket.revenue += toPaise(sale.total_amount); }
+  }
+  return [...buckets.values()].map(bucket=>({...bucket,revenue:bucket.revenue/100}));
+}

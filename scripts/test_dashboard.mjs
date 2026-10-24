@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { dashboardData } from '../src/services/dashboardData.js';
+import { dashboardData, salesTrendForDates } from '../src/services/dashboardData.js';
 const now = new Date(2026,9,19,12);
 const empty = {medicines:[],sales:[],orders:[],prescriptions:[],customers:[],suppliers:[]};
 const zero = dashboardData(empty,now);
@@ -20,3 +20,16 @@ assert.equal(result.totalStock,3);
 assert.equal(result.topSellingMedicines[0][0],'Actual medicine');
 assert.equal(result.topSellingMedicines[0][1],'2 units');
 console.log('Dashboard checks passed: empty data, actual stock, expiry, pending orders, completed sales, exact revenue and period buckets.');
+
+const exact = salesTrendForDates([sale, {...sale,status:'voided'}], '2026-10-19', '2026-10-19');
+assert.equal(exact.length,1);
+assert.equal(exact[0].revenue,12.35);
+assert.equal(exact[0].units,2);
+assert.equal(salesTrendForDates([sale],'2026-10-20','2026-10-21').reduce((sum,b)=>sum+b.revenue,0),0);
+assert.deepEqual(salesTrendForDates([sale],'2026-10-20','2026-10-19'),[]);
+assert.deepEqual(salesTrendForDates([sale],'','2026-10-19'),[]);
+assert.deepEqual(salesTrendForDates([sale],'2026-02-30','2026-10-19'),[]);
+const monthly = salesTrendForDates([sale],'2026-01-01','2026-12-31');
+assert.equal(monthly.length,12);
+assert.equal(monthly[9].revenue,12.35);
+console.log('Custom sales trend checks passed: inclusive dates, invalid dates, empty days, completed-only sales and monthly grouping.');

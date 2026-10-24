@@ -403,3 +403,5 @@
 .user-delete-dialog h2 { margin: 0 0 16px; }
 .user-delete-dialog p { line-height: 1.5; overflow-wrap: anywhere; }
 .user-delete-dialog .form-actions { display: flex; gap: 12px; justify-content: flex-end; margin-top: 24px; }
+
+.user-feedback-icon{display:grid;place-items:center;width:44px;height:44px;border-radius:12px;margin-bottom:16px;font-size:20px}.user-feedback-icon.warning{color:#946b15;background:#fff4d9}.user-feedback-icon.success{color:var(--accent);background:var(--accent-bg)}

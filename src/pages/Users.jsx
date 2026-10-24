@@ -15,6 +15,8 @@ function message(error) {
 
 export default function Users({ profile }) {
   const deleteDialog = useRef(null);
+  const feedbackDialog = useRef(null);
+  const [feedback, setFeedback] = useState(null);
   const actionLock = useRef(false);
   const [users, setUsers] = useState([]);
   const [draft, setDraft] = useState(emptyUser);
@@ -40,6 +42,11 @@ export default function Users({ profile }) {
     else deleteDialog.current?.close();
   }, [selected]);
 
+  useEffect(() => {
+    if (feedback && !feedbackDialog.current?.open) feedbackDialog.current?.showModal();
+    else if (!feedback) feedbackDialog.current?.close();
+  }, [feedback]);
+
   function cancelAction() {
     if (actionLock.current) return;
     setSelected(null); setPassword(''); setConfirmation(''); setError('');
@@ -54,7 +61,11 @@ export default function Users({ profile }) {
       setUsers((current) => [...current, data]);
       setDraft(emptyUser);
       const delivery = { sent: 'Welcome email sent, with the configured address copied.', partial: 'Welcome email delivery was incomplete. Check the recipient and CC addresses.', failed: 'Welcome email could not be sent. The account is saved; do not create it again.', not_configured: 'Welcome email is not configured on this server.' };
-      setNotice(`User ${data.email} created. ${delivery[data.welcome_email_status] || ''}`);
+      const deliveryMessage = delivery[data.welcome_email_status] || 'This server did not confirm email delivery. The user account is saved; do not create it again.';
+      setNotice(`User ${data.email} created. ${deliveryMessage}`);
+      if (data.welcome_email_status !== 'sent') {
+        setFeedback({ title: data.welcome_email_status === 'partial' ? 'Welcome email partly sent' : ['failed', 'not_configured'].includes(data.welcome_email_status) ? 'Welcome email not sent' : 'Email delivery not confirmed', text: `User ${data.email} was created successfully. ${deliveryMessage}`, tone: 'warning' });
+      }
     } catch (err) { setError(message(err)); }
     finally { setBusy(false); }
   }
@@ -75,6 +86,7 @@ export default function Users({ profile }) {
         await api.delete(`/users/${selected.user.id}`, requestOptions);
         setUsers((current) => current.filter((user) => user.id !== selected.user.id));
         setNotice(`User ${selected.user.email} deleted.`);
+        setFeedback({ title: 'User deleted', text: `${selected.user.email} has been deleted and their sessions have been revoked.`, tone: 'success' });
       } else {
         await api.post(`/users/${selected.user.id}/reset-password`, { new_password: password, confirm_password: confirmation }, requestOptions);
         setNotice(`Password reset for ${selected.user.email}. Their existing sessions have been revoked.`);
@@ -118,6 +130,9 @@ export default function Users({ profile }) {
         {error && <p role="alert" className="login-error">{error}</p>}
         <div className="form-actions"><button autoFocus type="button" className="secondary-button" disabled={busy} onClick={cancelAction}>Cancel</button><button type="submit" className="primary-button" disabled={busy}>{busy ? 'Deleting…' : 'Delete User'}</button></div>
       </form>}
+    </dialog>
+    <dialog ref={feedbackDialog} className="user-delete-dialog user-feedback-dialog" aria-labelledby="user-feedback-title" aria-describedby="user-feedback-description" onCancel={() => setFeedback(null)}>
+      {feedback && <><span className={`user-feedback-icon ${feedback.tone}`} aria-hidden="true"><i className={`fa-solid ${feedback.tone === 'warning' ? 'fa-triangle-exclamation' : 'fa-circle-check'}`} /></span><h2 id="user-feedback-title">{feedback.title}</h2><p id="user-feedback-description">{feedback.text}</p><div className="form-actions"><button autoFocus type="button" className="primary-button" onClick={() => setFeedback(null)}>OK</button></div></>}
     </dialog>
     <section className="settings-card"><div className="w-100">
       <h2>Users</h2>

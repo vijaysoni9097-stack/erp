@@ -15,6 +15,7 @@ function message(error) {
 
 export default function Users({ profile }) {
   const deleteDialog = useRef(null);
+  const resetDialog = useRef(null);
   const feedbackDialog = useRef(null);
   const [feedback, setFeedback] = useState(null);
   const actionLock = useRef(false);
@@ -40,6 +41,8 @@ export default function Users({ profile }) {
   useEffect(() => {
     if (selected?.action === 'delete') deleteDialog.current?.showModal();
     else deleteDialog.current?.close();
+    if (selected?.action === 'reset' && !resetDialog.current?.open) resetDialog.current?.showModal();
+    else if (selected?.action !== 'reset') resetDialog.current?.close();
   }, [selected]);
 
   useEffect(() => {
@@ -90,6 +93,7 @@ export default function Users({ profile }) {
       } else {
         await api.post(`/users/${selected.user.id}/reset-password`, { new_password: password, confirm_password: confirmation }, requestOptions);
         setNotice(`Password reset for ${selected.user.email}. Their existing sessions have been revoked.`);
+        setFeedback({ title: 'Password updated', text: `Password reset for ${selected.user.email}. Their existing sessions have been revoked.`, tone: 'success' });
       }
       setSelected(null); setPassword(''); setConfirmation('');
     } catch (err) { setError(message(err)); }
@@ -115,14 +119,17 @@ export default function Users({ profile }) {
         <div className="form-actions"><button type="submit" className="primary-button">{busy ? 'Please wait…' : 'Create User'}</button></div>
       </fieldset>
     </form></section>
-    {selected?.action === 'reset' && <section className="settings-card mb-4"><form className="w-100" onSubmit={perform}>
-      <h2>{selected.action === 'delete' ? 'Delete user' : 'Reset password'}: {selected.user.email}</h2>
-      {selected.action === 'delete' ? <p>This permanently deletes this account and revokes its sessions.</p> : <div className="settings-row">
-        <div className="field-group"><label htmlFor="admin-password">New Password</label><input id="admin-password" type="password" autoComplete="new-password" required minLength={12} maxLength={128} disabled={busy} value={password} onChange={(event) => setPassword(event.target.value)} /></div>
-        <div className="field-group"><label htmlFor="admin-confirmation">Confirm Password</label><input id="admin-confirmation" type="password" autoComplete="new-password" required minLength={12} maxLength={128} disabled={busy} value={confirmation} onChange={(event) => setConfirmation(event.target.value)} /></div>
-      </div>}
-      <div className="form-actions"><button type="button" className="secondary-button" disabled={busy} onClick={() => { setSelected(null); setPassword(''); setConfirmation(''); }}>Cancel</button><button type="submit" className="primary-button" disabled={busy}>{busy ? 'Please wait…' : selected.action === 'delete' ? 'Confirm Delete' : 'Reset Password'}</button></div>
-    </form></section>}
+    <dialog ref={resetDialog} className="user-delete-dialog user-reset-dialog" aria-labelledby="reset-user-title" aria-describedby="reset-user-description" onCancel={event => { event.preventDefault(); cancelAction(); }}>
+      {selected?.action === 'reset' && <form onSubmit={perform} aria-busy={busy}>
+        <h2 id="reset-user-title">Reset password</h2>
+        <p id="reset-user-description">Set a new password for <strong>{selected.user.email}</strong>. Their existing sessions will be revoked.</p>
+        <div className="field-group"><label htmlFor="admin-password">New Password</label><input autoFocus id="admin-password" type="password" autoComplete="new-password" required minLength={12} maxLength={128} disabled={busy} value={password} onChange={event => setPassword(event.target.value)} /></div>
+        <div className="field-group"><label htmlFor="admin-confirmation">Confirm Password</label><input id="admin-confirmation" type="password" autoComplete="new-password" required minLength={12} maxLength={128} disabled={busy} value={confirmation} onChange={event => setConfirmation(event.target.value)} /></div>
+        <p className="inline-note">Use 12–128 characters. Both passwords must match.</p>
+        {error && <p role="alert" className="login-error">{error}</p>}
+        <div className="form-actions"><button type="button" className="secondary-button" disabled={busy} onClick={cancelAction}>Cancel</button><button type="submit" className="primary-button" disabled={busy}>{busy ? 'Updating…' : 'Reset Password'}</button></div>
+      </form>}
+    </dialog>
     <dialog ref={deleteDialog} className="user-delete-dialog" aria-labelledby="delete-user-title" aria-describedby="delete-user-description" onCancel={event => { event.preventDefault(); cancelAction(); }}>
       {selected?.action === 'delete' && <form onSubmit={perform} aria-busy={busy}>
         <h2 id="delete-user-title">Delete user?</h2>

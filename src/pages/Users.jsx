@@ -41,7 +41,8 @@ export default function Users({ profile }) {
       const { data } = await api.post('/users', draft, requestOptions);
       setUsers((current) => [...current, data]);
       setDraft(emptyUser);
-      setNotice(`User ${data.email} created.`);
+      const delivery = { sent: 'Welcome email sent, with the configured address copied.', partial: 'Welcome email delivery was incomplete. Check the recipient and CC addresses.', failed: 'Welcome email could not be sent. The account is saved; do not create it again.', not_configured: 'Welcome email is not configured on this server.' };
+      setNotice(`User ${data.email} created. ${delivery[data.welcome_email_status] || ''}`);
     } catch (err) { setError(message(err)); }
     finally { setBusy(false); }
   }
@@ -83,7 +84,7 @@ export default function Users({ profile }) {
           </div>)}
           <div className="field-group"><label htmlFor="user-role">Role</label><select id="user-role" value={draft.role} onChange={(event) => setDraft((current) => ({ ...current, role: event.target.value }))}>{roles.map((role) => <option key={role} value={role}>{role}</option>)}</select></div>
         </div>
-        <p className="inline-note mt-3">Passwords must contain 12–128 characters. Superadmins can manage all users.</p>
+        <p className="inline-note mt-3">Passwords must contain 12–128 characters. New users receive a welcome email after creation. Share their initial password separately.</p>
         <div className="form-actions"><button type="submit" className="primary-button">{busy ? 'Please wait…' : 'Create User'}</button></div>
       </fieldset>
     </form></section>

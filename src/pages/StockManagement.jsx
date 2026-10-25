@@ -15,6 +15,10 @@ export default function StockManagement({ profile }) {
   const [expiryFrom, setExpiryFrom] = useState('');
   const [expiryTo, setExpiryTo] = useState('');
   const [page, setPage] = useState(1);
+  const [retryPage, setRetryPage] = useState(0);
+  const loadMoreTarget = useRef(null);
+  const requestGate = useRef(false);
+  const activeQuery = useRef(null);
   const [selected, setSelected] = useState(null);
   const [direction, setDirection] = useState('decrease');
   const [quantity, setQuantity] = useState('');
@@ -67,22 +71,39 @@ export default function StockManagement({ profile }) {
   }, [reload]);
   useEffect(() => {
     const controller = new AbortController();
+    const queryKey = JSON.stringify([reload, search.trim(), filter, expiryFrom, expiryTo]);
+    if (activeQuery.current !== queryKey) {
+      activeQuery.current = queryKey;
+      setData({items: []});
+      if (page !== 1) { setPage(1); return () => controller.abort(); }
+    }
     if (invalidExpiryRange || searchTooShort) { setLoading(false); setError(''); return () => controller.abort(); }
+    requestGate.current = true;
     setLoading(true); setError('');
     const timer = setTimeout(() => {
       const term = search.trim();
       api.get(term ? '/inventory/stock/search' : '/inventory/stock', {
         signal: controller.signal, timeout: 90000,
         params: {page, page_size: 50, stock_filter: filter, expiry_from: expiryFrom || undefined, expiry_to: expiryTo || undefined, q: term || undefined},
-      }).then(({data}) => { if (!controller.signal.aborted) setData(data); })
+      }).then(({data: result}) => { if (!controller.signal.aborted) setData(previous => ({...result, items: page === 1 ? result.items : [...new Map([...previous.items, ...result.items].map(row => [row.source_id, row])).values()]})); })
         .catch(error => { if (!controller.signal.aborted) setError(error.response?.status === 404 ? 'The connected API does not have stock pagination and search yet. Deploy the updated backend, then refresh this page.' : 'Could not load stock. Check the server and retry.'); })
-        .finally(() => { if (!controller.signal.aborted) setLoading(false); });
+        .finally(() => { if (!controller.signal.aborted) { requestGate.current = false; setLoading(false); } });
     }, search.trim() ? 300 : 0);
     return () => { clearTimeout(timer); controller.abort(); };
-  }, [reload, page, search, filter, expiryFrom, expiryTo, invalidExpiryRange, searchTooShort]);
+  }, [reload, page, search, filter, expiryFrom, expiryTo, invalidExpiryRange, searchTooShort, retryPage]);
   const filtered = data.items;
-  const pages = Math.max(1, Math.ceil((data.total || 0) / 50));
-  const current = page;
+  useEffect(() => {
+    const target = loadMoreTarget.current;
+    if (!target || loading || error || !data.has_more || data.page !== page || searchTooShort || invalidExpiryRange || !('IntersectionObserver' in window)) return;
+    const observer = new IntersectionObserver(entries => {
+      if (entries.some(entry => entry.isIntersecting) && !requestGate.current) {
+        requestGate.current = true;
+        setPage(value => value + 1);
+      }
+    }, {rootMargin: '0px 0px 600px 0px'});
+    observer.observe(target);
+    return () => observer.disconnect();
+  }, [data, page, loading, error, searchTooShort, invalidExpiryRange]);
   const cards = [
     ['Available Stock Units (Net)', stockCounts?.units ?? 0, 'blue', 'fa-cubes'],
     ['Items with Stock', stockCounts?.positive ?? 0, 'green', 'fa-circle-check'],
@@ -106,11 +127,15 @@ export default function StockManagement({ profile }) {
       <input aria-label="Search stock" placeholder="Search medicine or item code (2+ characters)" value={search} onChange={e => { setSearch(e.target.value); setPage(1); }} />
       <select aria-label="Stock filter" value={filter} onChange={e => { setFilter(e.target.value); setPage(1); }}><option value="all">All Items</option><option value="positive">With Stock</option><option value="zero">Zero Stock</option><option value="review">Needs Review</option></select>
     </div></div>
-    {searchTooShort ? <p role="status">Enter at least 2 characters to search stock.</p> : invalidExpiryRange ? <p role="alert">Choose a valid expiry date range.</p> : loading ? <p role="status">Loading stock…</p> : error ? <p role="alert">{error} <button onClick={() => setReload(v => v + 1)}>Retry</button></p> : <>
+    {searchTooShort ? <p role="status">Enter at least 2 characters to search stock.</p> : invalidExpiryRange ? <p role="alert">Choose a valid expiry date range.</p> : loading && !filtered.length ? <p role="status">Loading stock…</p> : error && !filtered.length ? <p role="alert">{error} <button onClick={() => setRetryPage(value => value + 1)}>Retry</button></p> : <>
     <div className="table-wrap"><table className="inventory-table"><thead><tr><th>Medicine</th><th>Item Code</th><th>Recorded Qty</th><th>Available Stock</th><th>Expiry Date</th><th>Last Updated</th><th>Status</th><th>Actions</th></tr></thead><tbody>
     {filtered.map(r => <tr key={r.source_id}><td><strong>{r.name}</strong></td><td>{r.source_id}</td><td>{r.quantity === null ? 'No record' : r.quantity.toLocaleString()}</td><td>{r.allocated_quantity ?? 'Not imported'}</td><td>{r.expiry_date ? new Date(`${r.expiry_date}T12:00:00`).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : 'Not recorded'}</td><td>{r.source_modified_on ? new Date(r.source_modified_on).toLocaleDateString() : '—'}</td><td>{r.current_quantity === null ? 'Missing stock record' : r.current_quantity < 0 ? 'Negative — review' : r.medicine_id === null ? 'Catalog not imported' : r.current_quantity === 0 ? 'Zero Stock' : 'In Stock'}</td><td><button className="table-action" disabled={r.medicine_id == null || !Number.isSafeInteger(r.allocated_quantity)} title={r.medicine_id == null ? 'Import this item into the catalog first' : 'Adjust available stock'} onClick={() => openAdjustment(r)}>Adjust Stock</button></td></tr>)}
     {!filtered.length && <tr><td colSpan={8}>No items match your search or filter.</td></tr>}
-    </tbody></table></div><div className="panel-head"><span>{(data.total || 0).toLocaleString()} items · Page {current} of {pages}</span><div className="panel-head-actions"><button className="ghost-btn" disabled={current === 1} onClick={() => setPage(current - 1)}>Previous</button><button className="ghost-btn" disabled={!data.has_more} onClick={() => setPage(current + 1)}>Next</button></div></div>
+    </tbody></table></div>
+    <div className="panel-head" ref={loadMoreTarget}>
+      <span>{filtered.length.toLocaleString()} of {(data.total || 0).toLocaleString()} items loaded</span>
+      {loading ? <span role="status">Loading more stock…</span> : error ? <span role="alert">{error} <button className="ghost-btn" onClick={() => setRetryPage(value => value + 1)}>Retry</button></span> : data.has_more ? <button className="ghost-btn" onClick={() => { if (!requestGate.current) { requestGate.current = true; setPage(value => value + 1); } }}>Load more</button> : <span>All matching items loaded</span>}
+    </div>
     </>}
     </section>
     <dialog ref={dialog} className="stock-adjust-dialog" aria-labelledby="adjust-stock-title" onCancel={event => { if (saveLock.current) event.preventDefault(); }}>

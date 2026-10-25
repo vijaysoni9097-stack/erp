@@ -4,7 +4,7 @@ import { api } from '../services/api';
 import '../styles/StockManagement.css';
 import ReceiveStock from '../components/ReceiveStock';
 
-export default function StockManagement() {
+export default function StockManagement({ profile }) {
   const [data, setData] = useState({ items: [] });
   const [medicines, setMedicines] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -87,7 +87,7 @@ export default function StockManagement() {
     ['Negative / Missing Stock', rows.filter(r => r.current_quantity === null || r.current_quantity < 0).length, 'red', 'fa-bell'],
   ];
   return <div className="inventory-page">
-    <header className="inventory-header"><div><p className="eyebrow">Inventory</p><h1>Stock Management</h1></div><div className="panel-head-actions"><ReceiveStock onReceived={message => { setNotice(message); setReload(v => v + 1); }} /><button className="secondary-btn" disabled={loading} onClick={() => setReload(v => v + 1)}>Refresh</button></div></header>
+    <header className="inventory-header"><div><p className="eyebrow">Inventory</p><h1>Stock Management</h1></div><div className="panel-head-actions">{['admin', 'superadmin'].includes(profile?.role) && <ReceiveStock medicines={medicines} onReceived={message => { setNotice(message); setReload(v => v + 1); }} />}<button className="secondary-btn" disabled={loading} onClick={() => setReload(v => v + 1)}>Refresh</button></div></header>
     {notice && <p className="stock-notice" role="status">{notice}</p>}
     <section className="summary-grid" aria-label="Stock summary">{cards.map(([label, value, tone, icon]) => <article key={label} className="summary-card"><div className="summary-copy"><p>{label}</p><div className="summary-row"><strong>{loading || error ? '—' : value.toLocaleString()}</strong></div></div><span className={`summary-icon ${tone}`}><i className={`fa-solid ${icon}`} /></span></article>)}</section>
     <p className="stock-count-definition">Counts use current catalog stock, matching Medicines. Imported backup quantities are reference only; unimported records are excluded from Zero Stock.</p>

@@ -19,6 +19,7 @@ import Login from './pages/Login'
 import Users from './pages/Users'
 import Sync from './pages/Sync'
 import BackgroundSync from './components/BackgroundSync'
+import ExpiryTicker from './components/ExpiryTicker'
 import { CurrencyProvider } from './contexts/CurrencyContext'
 import PasswordRecovery from './pages/PasswordRecovery'
 import 'bootstrap/dist/css/bootstrap.min.css'
@@ -140,7 +141,7 @@ function App() {
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/medicines" element={<Medicines />} />
             <Route path="/orders" element={<Orders profile={profile} />} />
-            <Route path="/stock-management" element={<StockManagement />} />
+            <Route path="/stock-management" element={<StockManagement profile={profile} />} />
             <Route path="/expiry-alerts" element={<ExpiryAlerts />} />
             <Route path="/suppliers" element={<Suppliers />} />
             <Route path="/purchase-orders" element={<PurchaseOrders profile={profile} />} />
@@ -160,6 +161,7 @@ function App() {
           </Routes>
         </main> 
       </div>
+      <ExpiryTicker key={profile.id} />
     </div></CurrencyProvider>
   )
 }

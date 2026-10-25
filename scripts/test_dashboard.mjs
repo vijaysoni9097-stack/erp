@@ -44,3 +44,12 @@ const collections = dashboardData({...empty, sales: [
 ]}, now).todayPayments;
 assert.deepEqual(collections, {cash:12.35,card:8.10,upi:4.20,bank_transfer:2,unrecorded:12.35});
 console.log('Payment collections passed: net cash after change, card, UPI, bank transfer, missing payment, voided and previous-day exclusions.');
+
+const stockStates = dashboardData({...empty, medicines: [
+  {stock_quantity:0,reorder_level:10,expiry_date:'2027-01-01'},
+  {stock_quantity:5,reorder_level:10,expiry_date:'2027-01-01'},
+  {stock_quantity:20,reorder_level:10,expiry_date:'2027-01-01'},
+]}, now);
+assert.equal(stockStates.zeroStock, 1);
+assert.equal(stockStates.low.length, 1);
+console.log('Dashboard distinguishes zero stock from positive low stock.');

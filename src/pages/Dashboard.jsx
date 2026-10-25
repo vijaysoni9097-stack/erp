@@ -55,7 +55,8 @@ function Dashboard() {
     {label:'Today’s Sales',value:formatMoney(data.todaySales),note:'Completed invoices · local day',icon:'fa-receipt',tone:'blue'},
     {label:'Total Medicines',value:data.totalMedicines,note:'Saved medicine batches',icon:'fa-capsules',tone:'blue'},
     {label:'Pending Orders',value:data.pendingOrders,note:'Awaiting approval or receipt',icon:'fa-cart-shopping',tone:'yellow'},
-    {label:'Low Stock Items',value:data.low.length,note:'At or below reorder level',icon:'fa-triangle-exclamation',tone:'red'},
+    {label:'Zero Stock Items',value:data.zeroStock,note:'No available units',icon:'fa-box-open',tone:'red'},
+    {label:'Low Stock Items',value:data.low.length,note:'Positive stock at or below reorder level',icon:'fa-triangle-exclamation',tone:'red'},
     {label:'Expiring Soon · 30 Days',value:data.expiry.length,note:'In-stock batches within 30 days',icon:'fa-calendar-days',tone:'sky'},
   ] : [];
   const rangeError = period === 'Custom dates' && (!dateFrom || !dateTo || dateFrom > dateTo);

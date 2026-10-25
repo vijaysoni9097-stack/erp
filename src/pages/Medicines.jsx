@@ -134,10 +134,10 @@ function Medicines() {
         {supplierError && <p role="status">Supplier names could not be loaded. Refresh to try again.</p>}
         {loading ? <p role="status">Loading medicines…</p> : error ? <p role="alert">{error} <button onClick={() => setReload(v => v + 1)}>Retry</button></p> : <>
           <div className="table-wrap"><table className="medicines-table">
-            <thead><tr><th>Medicine / SKU / Batch</th><th>Generic Name</th><th>Stock</th><th>Reorder</th><th>Supplier</th><th>Expiry</th><th>Status</th></tr></thead>
+            <thead><tr><th>Medicine / SKU / Batch</th><th>Generic Name</th><th>Stock / Unit</th><th>Reorder</th><th>Supplier</th><th>Expiry</th><th>Status</th></tr></thead>
             <tbody>{visible.map(m => <tr key={m.id}>
               <td><div className="medicine-meta"><strong>{m.name}</strong><small>{m.sku} · {m.batch_number}</small></div></td>
-              <td>{m.generic_name || '—'}</td><td>{m.stock_quantity}</td><td>{m.reorder_level}</td><td>{supplierName(m)}</td><td>{dateLabel(m.expiry_date)}</td>
+              <td>{m.generic_name || '—'}</td><td>{m.stock_quantity} {m.unit || 'number'}</td><td>{m.reorder_level}</td><td>{supplierName(m)}</td><td>{dateLabel(m.expiry_date)}</td>
               <td><span className={`status-pill ${m.stock_quantity === 0 ? 'critical' : m.stock_quantity <= m.reorder_level ? 'low-stock' : 'in-stock'}`}>{m.stock_quantity === 0 ? 'No Stock' : m.stock_quantity <= m.reorder_level ? 'Low Stock' : 'In Stock'}</span></td>
             </tr>)}{visible.length === 0 && <tr><td colSpan={7}>{medicines.length ? 'No medicines match your search or filter.' : 'No medicines in the local database.'}</td></tr>}</tbody>
           </table></div>

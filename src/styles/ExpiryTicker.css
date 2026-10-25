@@ -1,0 +1,15 @@
+.expiry-ticker-space { height: 52px; flex-shrink: 0; }
+.expiry-ticker { position: fixed; bottom: 0; left: 0; right: 0; z-index: 100; height: 52px; display: flex; align-items: center; gap: 14px; border-top: 1px solid #e9c275; background: #fff8e8; color: #74420e; box-shadow: 0 -3px 14px #2733460d; }
+.expiry-ticker-label { align-self: stretch; display: flex; align-items: center; gap: 8px; padding: 0 18px; color: #74420e; background: #ffefc7; font-size: 13px; font-weight: 700; text-decoration: none; flex-shrink: 0; }
+.expiry-ticker-label i { animation: expiry-glow 2.5s ease-in-out infinite; }
+.expiry-ticker-label small { font-size: 10px; font-weight: 400; }
+.expiry-ticker-window { flex: 1; overflow: hidden; min-width: 0; }
+.expiry-ticker-track { display: flex; width: max-content; animation: expiry-scroll var(--ticker-duration) linear infinite; }
+.expiry-ticker-track span { padding-right: 70px; white-space: pre; font-size: 13px; }
+.expiry-ticker button { margin-right: 14px; border: 1px solid #e9c275; border-radius: 6px; background: #fff; color: #74420e; width: 32px; height: 32px; flex-shrink: 0; }
+.expiry-ticker:hover .expiry-ticker-track, .expiry-ticker:focus-within .expiry-ticker-track, .expiry-ticker.is-paused .expiry-ticker-track { animation-play-state: paused; }
+@keyframes expiry-scroll { to { transform: translateX(-50%); } }
+@keyframes expiry-glow { 50% { opacity: .45; } }
+@media (prefers-reduced-motion: reduce) { .expiry-ticker-track, .expiry-ticker-label i { animation: none; } .expiry-ticker-window { overflow-x: auto; } .expiry-ticker-track span[aria-hidden] { display: none; } }
+@media (max-width: 640px) { .expiry-ticker-label { padding: 0 10px; font-size: 11px; } .expiry-ticker-label small { display: none; } }
+@media print { .expiry-ticker-space { display: none; } }

@@ -1,9 +1,10 @@
+import { isLowStock, isZeroStock } from './stockSummary.js';
 import { isExpiringSoon } from './expiry.js';
 import { dayKey, saleDate, toPaise } from './dailySales.js';
 
 export function dashboardData({ medicines, sales, orders, prescriptions, customers, suppliers }, now = new Date()) {
   const today = dayKey(now);
-  const low = medicines.filter(m => m.stock_quantity <= m.reorder_level);
+  const low = medicines.filter(isLowStock);
   const expiry = medicines.filter(m => isExpiringSoon(m, now)).sort((a,b) => a.expiry_date.localeCompare(b.expiry_date));
   const completed = sales.filter(s => s.status === 'completed' && Number.isFinite(saleDate(s.created_at).getTime()));
   const todayPayments = { cash: 0, card: 0, upi: 0, bank_transfer: 0, unrecorded: 0 };
@@ -44,6 +45,7 @@ export function dashboardData({ medicines, sales, orders, prescriptions, custome
   const customerMap = new Map(customers.map(c=>[c.id,c.full_name]));
   const supplierMap = new Map(suppliers.map(s=>[s.id,s.name]));
   return {
+    zeroStock: medicines.filter(isZeroStock).length,
     todayPayments,
     todaySales:completed.filter(s=>dayKey(saleDate(s.created_at))===today).reduce((sum,s)=>sum+toPaise(s.total_amount),0)/100,
     totalMedicines:medicines.length, pendingOrders:orders.filter(o=>['pending_approval','approved','ordered','partially_received'].includes(o.status)).length,

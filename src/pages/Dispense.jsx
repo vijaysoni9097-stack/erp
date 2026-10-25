@@ -4,6 +4,8 @@ import { api } from '../services/api';
 import TodaySales from '../components/TodaySales';
 import BillingDetails from '../components/BillingDetails';
 import '../styles/StockManagement.css';
+import { dayKey } from '../services/dailySales';
+import { validDiscount, readDailyDiscount, saveDailyDiscount, applyBillDiscount } from '../services/dailyDiscount';
 import { discountLine } from '../services/discounts';
 import { printInvoice } from '../services/printInvoice';
 import '../styles/Dispense.css';
@@ -25,6 +27,11 @@ export default function Dispense({profile}) {
   const [reload, setReload] = useState(0);
   const [search, setSearch] = useState('');
   const [cart, setCart] = useState([]);
+  const [discountDay, setDiscountDay] = useState(dayKey);
+  const [dailyDiscount, setDailyDiscount] = useState('');
+  const [dailyDraft, setDailyDraft] = useState('');
+  const [customerDiscount, setCustomerDiscount] = useState('');
+  const [discountNotice, setDiscountNotice] = useState('');
   const [patient, setPatient] = useState('');
   const [prescriber, setPrescriber] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('cash');
@@ -43,6 +50,37 @@ export default function Dispense({profile}) {
     if (receipt) receiptRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }, [receipt]);
   const locked = busy || Boolean(pending);
+
+  useEffect(() => {
+    const checkDay = () => setDiscountDay(dayKey());
+    const timer = setInterval(checkDay, 30000);
+    window.addEventListener('focus', checkDay);
+    return () => { clearInterval(timer); window.removeEventListener('focus', checkDay); };
+  }, []);
+  useEffect(() => {
+    let value = '';
+    try { value = readDailyDiscount(window.localStorage, profile.id, discountDay); } catch { /* Storage may be disabled. */ }
+    setDailyDiscount(value);setDailyDraft(value);setCustomerDiscount('');setDiscountNotice('');
+  }, [profile.id, discountDay]);
+
+  function setTodaysDiscount() {
+    if (locked || !validDiscount(dailyDraft)) return;
+    const value = String(Number(dailyDraft));
+    let stored = false;
+    try { stored = saveDailyDiscount(window.localStorage, profile.id, dayKey(), value); } catch { /* Keep working in this session. */ }
+    setDiscountDay(dayKey());setDailyDiscount(value);setDailyDraft(value);setCustomerDiscount('');
+    setCart(items => applyBillDiscount(items, value));setPaymentConfirmed(false);
+    setDiscountNotice(stored ? 'Today’s default saved and applied to this bill.' : 'Discount applied. Browser storage is unavailable; re-enter it after reloading.');
+  }
+  function changeCustomerDiscount(value) {
+    if (locked) return;
+    setCustomerDiscount(value);setPaymentConfirmed(false);
+    const effective = value === '' ? dailyDiscount : value;
+    if (validDiscount(effective)) setCart(items => applyBillDiscount(items, effective));
+    setDiscountNotice('Customer changes apply to this bill only.');
+  }
+  const effectiveDiscount = customerDiscount === '' ? dailyDiscount : customerDiscount;
+  const discountReady = validDiscount(dailyDiscount) && validDiscount(effectiveDiscount);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -88,7 +126,7 @@ export default function Dispense({profile}) {
     setCart(items => {
       const existing = items.find(item => item.id === medicine.id);
       if(existing) return items.map(item => item.id === medicine.id ? {...item,quantity:Math.min(item.quantity+1,medicine.stock_quantity)} : item);
-      return [...items,{id:medicine.id,quantity:1,discount_percent:0}];
+      return [...items,{id:medicine.id,quantity:1,discount_percent:validDiscount(effectiveDiscount) ? Number(effectiveDiscount) : 0}];
     });
   }
   function quantity(id,value) {
@@ -98,13 +136,14 @@ export default function Dispense({profile}) {
   }
   async function checkout(event) {
     event.preventDefault();
-    if(submitting.current || !paymentConfirmed || (!pending && (!cart.length || invalid || !paymentValid || !patient.trim() || !prescriber.trim()))) return;
+    if (!pending && dayKey() !== discountDay) { setDiscountDay(dayKey()); setError('A new day has started. Set today’s discount before completing this sale.'); return; }
+    if(submitting.current || !paymentConfirmed || (!pending && (!cart.length || invalid || !paymentValid || !discountReady || !patient.trim() || !prescriber.trim()))) return;
     const payload = pending || {request_id:crypto.randomUUID(),patient_name:patient.trim(),prescribed_by:prescriber.trim(),payment:{method:paymentMethod,tendered:tendered.toFixed(2),reference:paymentMethod === 'cash' ? null : paymentReference.trim(),confirmed:paymentConfirmed},items:cart.map(item => ({medicine_id:item.id,quantity:item.quantity,discount_percent:Number(item.discount_percent)}))};
     submitting.current = true; setBusy(true); setPending(payload); setError('');
     try {
       const {data} = await api.post('/sales/checkout',payload,{timeout:90000});
       setReceipt({...data,patient:payload.patient_name,doctor:payload.prescribed_by});
-      setCart([]); setCashReceived(''); setPaymentReference(''); setPaymentConfirmed(false); setPatient(''); setPrescriber(''); setPending(null); setReload(v=>v+1);
+      setCart([]); setCustomerDiscount(''); setDiscountNotice(''); setCashReceived(''); setPaymentReference(''); setPaymentConfirmed(false); setPatient(''); setPrescriber(''); setPending(null); setReload(v=>v+1);
     } catch(err) {
       setError(errorText(err));
       // Keep the exact request after network/server errors; replay is idempotent.
@@ -131,6 +170,15 @@ export default function Dispense({profile}) {
         <div className="dispense-section-title"><div><span className="dispense-step">02</span><h2>Patient & bill</h2></div><span className="dispense-draft">New sale</span></div>
         <fieldset disabled={locked}><label className="dispense-field">Patient name <span>*</span><input required minLength={2} maxLength={150} value={patient} onChange={e=>setPatient(e.target.value)} placeholder="Enter patient's full name" autoComplete="off" /></label><label className="dispense-field">Prescribed by <span>*</span><input required minLength={2} maxLength={150} list="dispense-doctors" value={prescriber} onChange={e=>setPrescriber(e.target.value)} placeholder="Select or type doctor's name" autoComplete="off" /><datalist id="dispense-doctors">{doctors.map(name=><option key={name} value={name} />)}</datalist></label></fieldset>
         <p className="dispense-hint">{doctorError ? 'Doctor suggestions are unavailable. Enter the prescriber’s name manually.' : 'Choose a known prescriber or enter an external doctor’s name.'}</p>
+        <fieldset className="dispense-daily-discount" disabled={locked}>
+          <legend>Today’s discount</legend>
+          <p>Set your default before the first sale each day. It is remembered for your login on this browser.</p>
+          <div className="dispense-default-discount-row"><label htmlFor="daily-discount">Daily default %<input id="daily-discount" type="number" min="0" max="100" step="0.01" value={dailyDraft} placeholder="Enter 0–100" onChange={event=>setDailyDraft(event.target.value)} /></label><button type="button" disabled={locked || !validDiscount(dailyDraft)} onClick={setTodaysDiscount}>Set and apply</button></div>
+          <label className="dispense-customer-discount" htmlFor="customer-discount">This customer’s discount % <span>Optional</span><input id="customer-discount" type="number" min="0" max="100" step="0.01" value={customerDiscount} placeholder={dailyDiscount === '' ? 'Set daily default first' : `Use today’s ${dailyDiscount}%`} onChange={event=>changeCustomerDiscount(event.target.value)} disabled={locked || dailyDiscount === ''} /></label>
+          <p>Applying a default or customer discount replaces all line discounts on this bill. You can then adjust individual medicines below.</p>
+          {!discountReady && <p className="dispense-discount-required">{dailyDiscount === '' ? 'Enter today’s default and select Set and apply. Use 0 for no discount.' : 'Enter a customer discount from 0 to 100 with up to two decimal places.'}</p>}
+          {discountNotice && <p role="status">{discountNotice}</p>}
+        </fieldset>
         <div className="dispense-cart-heading"><h3>Selected medicines</h3><span>{cart.length} items</span></div>
         {!cart.length ? <div className="dispense-cart-empty"><i className="fa-solid fa-basket-shopping" aria-hidden="true" /><p>Your bill starts here</p><small>Add medicines from the list.</small></div> : <div className="dispense-cart">{cart.map(item=>{const m=stock.get(item.id);return <div className="dispense-cart-item" key={item.id}><div className="dispense-cart-name"><strong>{m?.name || 'Unavailable medicine'}</strong><button type="button" aria-label={`Remove ${m?.name || 'medicine'}`} disabled={locked} onClick={()=>{setCart(items=>items.filter(i=>i.id!==item.id));setPaymentConfirmed(false);}}><i className="fa-solid fa-xmark" aria-hidden="true" /></button></div><small>Batch {m?.batch_number} · {money(m?.selling_price || 0)} / unit</small><div className="dispense-cart-line"><div className="dispense-quantity"><button type="button" aria-label={`Decrease ${m?.name} quantity`} disabled={locked || item.quantity<=1} onClick={()=>quantity(item.id,item.quantity-1)}>−</button><input aria-label={`Quantity for ${m?.name}`} type="number" min="1" max={m?.stock_quantity || 1} step="1" required disabled={locked} value={item.quantity} onChange={e=>quantity(item.id,e.target.value)} /><button type="button" aria-label={`Increase ${m?.name} quantity`} disabled={locked || item.quantity>=m?.stock_quantity} onClick={()=>quantity(item.id,Number(item.quantity)+1)}>+</button></div><strong>{money(discountLine(m?.selling_price||0,item.quantity,item.discount_percent)?.total||0)}</strong></div><label className="dispense-line-discount">Discount %<input type="number" min="0" max="100" step="0.01" required disabled={locked} aria-label={`Discount percentage for ${m?.name}`} value={item.discount_percent} onChange={event=>{setCart(items=>items.map(row=>row.id===item.id?{...row,discount_percent:event.target.value}:row));setPaymentConfirmed(false);}}/><span>Save {money(discountLine(m?.selling_price||0,item.quantity,item.discount_percent)?.discount||0)}</span></label></div>;})}</div>}
         <div className="dispense-totals"><div><span>Total units</span><strong>{units || 0}</strong></div><div><span>Before discount</span><strong>{money(grossTotal)}</strong></div><div><span>Discount</span><strong>−{money(totalDiscount)}</strong></div><div><span>Subtotal</span><strong>{money(total)}</strong></div><div><span>GST / tax</span><strong>{money(0)}</strong></div><div className="dispense-grand-total"><span>Bill total</span><strong>{money(total)}</strong></div></div>
@@ -143,7 +191,7 @@ export default function Dispense({profile}) {
         {invalid && <p className="dispense-error" role="alert">Check quantities and discounts: quantities must be whole numbers within stock, and discounts must be 0–100% with up to two decimal places.</p>}
         {error && <p className="dispense-error" role="alert">{error}</p>}
         {pending && !busy && <p className="dispense-hint">Keep this page open and retry this bill to confirm its status without creating a duplicate.</p>}
-        <button className="dispense-checkout" type="submit" disabled={busy || !paymentConfirmed || (!pending && (loading || Boolean(loadError) || !cart.length || invalid || !paymentValid))}>{busy ? 'Confirming sale…' : pending ? 'Retry / confirm this sale' : `Complete paid sale · ${money(total)}`} <i className="fa-solid fa-arrow-right" aria-hidden="true" /></button>
+        <button className="dispense-checkout" type="submit" disabled={busy || !paymentConfirmed || (!pending && (loading || Boolean(loadError) || !cart.length || invalid || !paymentValid || !discountReady))}>{busy ? 'Confirming sale…' : pending ? 'Retry / confirm this sale' : `Complete paid sale · ${money(total)}`} <i className="fa-solid fa-arrow-right" aria-hidden="true" /></button>
         <p className="dispense-footer-note"><i className="fa-solid fa-shield-halved" aria-hidden="true" /> Stock and final prices are checked when you complete the sale.</p>
       </form>
     </div>

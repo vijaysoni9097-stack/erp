@@ -1,10 +1,12 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { summarizeStock } from '../services/stockSummary';
 import { api } from '../services/api';
 import '../styles/StockManagement.css';
 import ReceiveStock from '../components/ReceiveStock';
 
 export default function StockManagement() {
   const [data, setData] = useState({ items: [] });
+  const [medicines, setMedicines] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [reload, setReload] = useState(0);
@@ -45,6 +47,7 @@ export default function StockManagement() {
         quantity_change: direction === 'increase' ? amount : -amount,
         note: `${reason}${note.trim() ? ': ' + note.trim() : ''}`,
       });
+      setMedicines(previous => previous.map(row => row.id === medicine.id ? medicine : row));
       setData(previous => ({ ...previous, items: previous.items.map(row => row.medicine_id === medicine.id
         ? { ...row, allocated_quantity: medicine.stock_quantity } : row) }));
       setNotice(`${selected.name}: stock ${direction === 'increase' ? 'increased' : 'decreased'} by ${amount.toLocaleString()}. Available on device: ${medicine.stock_quantity.toLocaleString()}.`);
@@ -57,14 +60,20 @@ export default function StockManagement() {
   useEffect(() => {
     const controller = new AbortController();
     setLoading(true); setError('');
-    api.get('/inventory/source-stock', { signal: controller.signal }).then(({ data }) => {
-      if (!controller.signal.aborted) { setData(data); setPage(1); }
+    Promise.all([api.get('/inventory/source-stock', { signal: controller.signal, timeout:90000 }), api.get('/medicines', { signal:controller.signal, timeout:90000 })]).then(([snapshot,catalog]) => {
+      if (!controller.signal.aborted) { setData(snapshot.data); setMedicines(catalog.data); setPage(1); }
     }).catch(() => {
       if (!controller.signal.aborted) setError('Could not load stock. Check the local service and retry.');
     }).finally(() => { if (!controller.signal.aborted) setLoading(false); });
     return () => controller.abort();
   }, [reload]);
-  const rows = data.items.map(row => ({ ...row, current_quantity: row.allocated_quantity ?? row.quantity }));
+  const catalog = new Map(medicines.map(m=>[m.id,m]));
+  const stockCounts = summarizeStock(medicines);
+  const rows = data.items.map(row => {
+    const medicine = catalog.get(row.medicine_id);
+    return {...row, medicine_id:medicine?.id ?? null, allocated_quantity:medicine?.stock_quantity ?? null,
+      current_quantity:medicine?.stock_quantity ?? null};
+  });
   const invalidExpiryRange = Boolean(expiryFrom && expiryTo && expiryFrom > expiryTo);
   const filtered = rows.filter(r => !invalidExpiryRange &&
     ((!expiryFrom && !expiryTo) || (r.expiry_date && (!expiryFrom || r.expiry_date >= expiryFrom) && (!expiryTo || r.expiry_date <= expiryTo))) && `${r.name} ${r.source_id}`.toLowerCase().includes(search.trim().toLowerCase()) &&
@@ -72,15 +81,16 @@ export default function StockManagement() {
   const pages = Math.max(1, Math.ceil(filtered.length / 50));
   const current = Math.min(page, pages);
   const cards = [
-    ['Available Stock Units (Net)', rows.reduce((n, r) => n + (r.current_quantity ?? 0), 0), 'blue', 'fa-cubes'],
-    ['Items with Stock', rows.filter(r => r.current_quantity > 0).length, 'green', 'fa-circle-check'],
-    ['Items with Zero Stock', rows.filter(r => r.current_quantity === 0).length, 'amber', 'fa-triangle-exclamation'],
+    ['Available Stock Units (Net)', stockCounts.units, 'blue', 'fa-cubes'],
+    ['Items with Stock', stockCounts.positive, 'green', 'fa-circle-check'],
+    ['Zero Stock', stockCounts.zero, 'amber', 'fa-triangle-exclamation'],
     ['Negative / Missing Stock', rows.filter(r => r.current_quantity === null || r.current_quantity < 0).length, 'red', 'fa-bell'],
   ];
   return <div className="inventory-page">
     <header className="inventory-header"><div><p className="eyebrow">Inventory</p><h1>Stock Management</h1></div><div className="panel-head-actions"><ReceiveStock onReceived={message => { setNotice(message); setReload(v => v + 1); }} /><button className="secondary-btn" disabled={loading} onClick={() => setReload(v => v + 1)}>Refresh</button></div></header>
     {notice && <p className="stock-notice" role="status">{notice}</p>}
     <section className="summary-grid" aria-label="Stock summary">{cards.map(([label, value, tone, icon]) => <article key={label} className="summary-card"><div className="summary-copy"><p>{label}</p><div className="summary-row"><strong>{loading || error ? '—' : value.toLocaleString()}</strong></div></div><span className={`summary-icon ${tone}`}><i className={`fa-solid ${icon}`} /></span></article>)}</section>
+    <p className="stock-count-definition">Counts use current catalog stock, matching Medicines. Imported backup quantities are reference only; unimported records are excluded from Zero Stock.</p>
     <section className="inventory-panel"><div className="panel-head stock-inventory-toolbar"><div className="stock-inventory-heading"><h2>Stock Inventory</h2>
     <div className="stock-expiry-filters" role="group" aria-label="Filter by expiry date">
       <label>Expiry from<input type="date" value={expiryFrom} max={expiryTo || undefined} onChange={e => { setExpiryFrom(e.target.value); setPage(1); }} /></label>

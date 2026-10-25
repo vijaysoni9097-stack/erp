@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { isExpiringSoon } from '../services/expiry';
+import { isZeroStock, isLowStock, summarizeStock } from '../services/stockSummary';
 import { api } from '../services/api';
 import '../styles/Medicines.css';
 
@@ -80,16 +81,18 @@ function Medicines() {
     const term = search.trim().toLowerCase();
     return medicines.filter(m =>
       (!term || [m.name, m.generic_name, m.sku, m.batch_number, suppliers[m.supplier_id]].some(v => v?.toLowerCase().includes(term))) &&
-      (filter === 'all' || (filter === 'low' && m.stock_quantity <= m.reorder_level) || (filter === 'expiring' && expiring(m)))
+      (filter === 'all' || (filter === 'low' && isLowStock(m)) || (filter === 'zero' && isZeroStock(m)) || (filter === 'expiring' && expiring(m)))
     );
   }, [medicines, suppliers, search, filter]);
   const pages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const currentPage = Math.min(page, pages);
   const visible = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+  const stockCounts = summarizeStock(medicines);
   const cards = [
     { label: 'Total Medicines', value: medicines.length, tone: 'blue', icon: 'fa-capsules' },
     { label: 'In Stock', value: medicines.filter(m => m.stock_quantity > 0).length, tone: 'green', icon: 'fa-pills' },
-    { label: 'Low / No Stock', value: medicines.filter(m => m.stock_quantity <= m.reorder_level).length, tone: 'amber', icon: 'fa-triangle-exclamation' },
+    { label: 'Zero Stock', value: stockCounts.zero, tone: 'red', icon: 'fa-box-open' },
+    { label: 'Low Stock', value: stockCounts.low, tone: 'amber', icon: 'fa-triangle-exclamation' },
     { label: 'Expiring Soon · 30 Days', value: medicines.filter(m => expiring(m)).length, tone: 'red', icon: 'fa-calendar-days' },
   ];
   return (
@@ -108,9 +111,10 @@ function Medicines() {
           <span className={`summary-icon ${card.tone}`}><i className={`fa-solid ${card.icon}`} /></span>
         </article>)}
       </section>
+      <p className="stock-count-definition">Zero Stock counts catalog batches with exactly 0 available units. Low Stock counts positive quantities at or below the reorder level.</p>
       <section className="medicines-toolbar">
         <div className="search-box"><i className="fa-solid fa-magnifying-glass" /><input aria-label="Search medicines" type="search" placeholder="Search name, SKU, batch or supplier" value={search} onChange={e => { setSearch(e.target.value); setPage(1); }} /></div>
-        <div className="toolbar-actions" title="Expiring Soon counts in-stock batches expiring today through 30 days ahead; expired and zero-stock batches are excluded.">{[['all', 'All Medicines'], ['low', 'Low Stock'], ['expiring', 'Expiring Soon']].map(([key, label]) => <button key={key} type="button" aria-pressed={filter === key} className={`filter-button ${filter === key ? 'active' : ''}`} onClick={() => { setFilter(key); setPage(1); }}>{label}</button>)}</div>
+        <div className="toolbar-actions" title="Expiring Soon counts in-stock batches expiring today through 30 days ahead; expired and zero-stock batches are excluded.">{[['all', 'All Medicines'], ['low', 'Low Stock'], ['zero', 'Zero Stock'], ['expiring', 'Expiring Soon']].map(([key, label]) => <button key={key} type="button" aria-pressed={filter === key} className={`filter-button ${filter === key ? 'active' : ''}`} onClick={() => { setFilter(key); setPage(1); }}>{label}</button>)}</div>
       </section>
       <section className="medicines-panel">
         <div className="panel-head"><h2>Medicine Inventory</h2><span>{!loading && !error && `${filtered.length.toLocaleString()} medicines`}</span></div>

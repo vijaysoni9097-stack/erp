@@ -254,3 +254,24 @@
 .dashboard-collection strong { color: var(--text-h, #1f2937); font-size: clamp(18px, 2vw, 26px); overflow-wrap: anywhere; }
 .dashboard-collection-note { margin: 0; padding: 0 22px 20px; color: var(--text-muted, #677285); font-size: 13px; }
 @media (max-width: 640px) { .dashboard-collection-grid { grid-template-columns: 1fr; } }
+
+/* Keep all six overview metrics together, with compact, aligned typography. */
+.dashboard-page .dashboard-summary-row { grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 12px; }
+.dashboard-page .dashboard-summary-row .dashboard-card { min-width: 0; min-height: 142px; padding: 16px 14px; }
+.dashboard-page .dashboard-summary-row .stat-label { padding-right: 0; padding-top: 34px; min-height: 66px; font-size: 11px; line-height: 1.4; }
+.dashboard-page .dashboard-summary-row .stat-icon { top: 12px; left: 14px; right: auto; width: 26px; height: 26px; }
+.dashboard-page .dashboard-summary-row .stat-value-row { margin-top: 4px; }
+.dashboard-page .dashboard-summary-row .stat-value-row strong { font-size: clamp(18px, 1.7vw, 27px); letter-spacing: -.5px; line-height: 1.25; }
+.dashboard-page .dashboard-summary-row .stat-note { margin-top: 10px; font-size: 10px; line-height: 1.4; }
+@media (min-width: 901px) and (max-width: 1200px) {
+  .dashboard-page .dashboard-summary-row { grid-template-columns: repeat(6, minmax(135px, 1fr)); overflow-x: auto; padding-bottom: 8px; }
+}
+@media (max-width: 900px) {
+  .dashboard-page .dashboard-summary-row { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .dashboard-page .dashboard-summary-row .dashboard-card-sales { grid-column: auto; }
+  .dashboard-page .dashboard-summary-row .stat-value-row strong { font-size: 24px; }
+}
+@media (max-width: 540px) {
+  .dashboard-page .dashboard-summary-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .dashboard-page .dashboard-summary-row .stat-value-row strong { font-size: 22px; }
+}

@@ -79,7 +79,7 @@ function Dashboard() {
       </header>
 
       <div className={`dashboard-update ${error ? 'has-error' : ''}`} role="status"><span className="dashboard-update-dot" /><span>{error || (updated ? `Updated ${updated.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'})} · Refreshes automatically` : 'Loading pharmacy data…')}</span></div>
-      <div className="dashboard-cards">
+      <div className="dashboard-cards dashboard-summary-row">
         {summaryCards.map((card) => (
           <article className={`dashboard-card ${card.label === 'Today’s Sales' ? 'dashboard-card-sales' : ''}`} key={card.label}>
             <div>

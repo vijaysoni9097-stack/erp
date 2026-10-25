@@ -10,7 +10,6 @@ const navigation = [
   { label: "Orders", path: "/orders", icon: "fa-cart-shopping" },
   { label: "Messages", path: "/messages", icon: "fa-message" },
   { label: "User Management", path: "/users", icon: "fa-users-gear", superadminOnly: true },
-  { label: "Synchronization", path: "/sync", icon: "fa-rotate" },
   { label: "Settings", path: "/settings", icon: "fa-gear" },
 ];
 

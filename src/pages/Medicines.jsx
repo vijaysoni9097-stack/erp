@@ -42,7 +42,7 @@ function Medicines() {
         setMedicines(catalog.value.data);
         setPage(1);
       } else {
-        setError('Could not load medicines. Check that the local service is running, then retry.');
+        setError('Could not load medicines. Check that the server is running, then retry.');
       }
       if (supplierList.status === 'fulfilled') {
         setSuppliers(Object.fromEntries(supplierList.value.data.map(s => [s.id, s.name])));
@@ -139,7 +139,7 @@ function Medicines() {
               <td><div className="medicine-meta"><strong>{m.name}</strong><small>{m.sku} · {m.batch_number}</small></div></td>
               <td>{m.generic_name || '—'}</td><td>{m.stock_quantity} {m.unit || 'number'}</td><td>{m.reorder_level}</td><td>{supplierName(m)}</td><td>{dateLabel(m.expiry_date)}</td>
               <td><span className={`status-pill ${m.stock_quantity === 0 ? 'critical' : m.stock_quantity <= m.reorder_level ? 'low-stock' : 'in-stock'}`}>{m.stock_quantity === 0 ? 'No Stock' : m.stock_quantity <= m.reorder_level ? 'Low Stock' : 'In Stock'}</span></td>
-            </tr>)}{visible.length === 0 && <tr><td colSpan={7}>{medicines.length ? 'No medicines match your search or filter.' : 'No medicines in the local database.'}</td></tr>}</tbody>
+            </tr>)}{visible.length === 0 && <tr><td colSpan={7}>{medicines.length ? 'No medicines match your search or filter.' : 'No medicines in the pharmacy database.'}</td></tr>}</tbody>
           </table></div>
           <div className="panel-head"><span>Page {currentPage} of {pages}</span><div className="panel-head-actions"><button className="ghost-btn" disabled={currentPage <= 1} onClick={() => setPage(currentPage - 1)}>Previous</button><button className="ghost-btn" disabled={currentPage >= pages} onClick={() => setPage(currentPage + 1)}>Next</button></div></div>
         </>}

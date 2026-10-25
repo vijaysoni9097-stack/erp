@@ -63,7 +63,7 @@ export default function StockManagement({ profile }) {
     Promise.all([api.get('/inventory/source-stock', { signal: controller.signal, timeout:90000 }), api.get('/medicines', { signal:controller.signal, timeout:90000 })]).then(([snapshot,catalog]) => {
       if (!controller.signal.aborted) { setData(snapshot.data); setMedicines(catalog.data); setPage(1); }
     }).catch(() => {
-      if (!controller.signal.aborted) setError('Could not load stock. Check the local service and retry.');
+      if (!controller.signal.aborted) setError('Could not load stock. Check the server and retry.');
     }).finally(() => { if (!controller.signal.aborted) setLoading(false); });
     return () => controller.abort();
   }, [reload]);

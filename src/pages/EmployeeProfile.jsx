@@ -15,7 +15,7 @@ const editable = [...fields.map(([key]) => key), 'years_experience', 'profession
 const roles = { doctor: 'Doctor', superadmin: 'Superadmin', admin: 'Admin', pharmacist: 'Pharmacist', nurse: 'Nurse', receptionist: 'Receptionist' };
 
 function errorMessage(error) {
-  if (!error.response || error.response.status >= 500) return 'Cannot reach the local service. Your changes have not been saved. Please retry.';
+  if (!error.response || error.response.status >= 500) return 'Cannot reach the server. Your changes have not been saved. Please retry.';
   const detail = error.response.data?.detail;
   if (Array.isArray(detail)) return detail.map((item) => `${item.loc.at(-1)}: ${item.msg}`).join(' ');
   return typeof detail === 'string' ? detail : 'Unable to save your profile.';

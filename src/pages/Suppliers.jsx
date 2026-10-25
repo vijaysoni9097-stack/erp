@@ -7,7 +7,7 @@ const empty = { name: '', contact_person: '', phone: '', email: '', address: '' 
 const fields = [['name', 'Supplier Name', 150], ['contact_person', 'Contact Person', 100], ['phone', 'Phone', 30], ['email', 'Email', 150], ['address', 'Address', 1000]];
 function message(error) {
   const detail = error.response?.data?.detail;
-  return typeof detail === 'string' ? detail : Array.isArray(detail) ? detail.map((item) => item.msg).join(' ') : 'Unable to reach the local service. Please retry.';
+  return typeof detail === 'string' ? detail : Array.isArray(detail) ? detail.map((item) => item.msg).join(' ') : 'Unable to reach the server. Please retry.';
 }
 export default function Suppliers() {
   const [suppliers, setSuppliers] = useState([]);
@@ -41,7 +41,7 @@ export default function Suppliers() {
     try {
       const { data } = editing === 'new' ? await api.post('/suppliers', draft) : await api.put(`/suppliers/${editing}`, draft);
       setSuppliers((current) => [...current.filter((item) => item.id !== data.id), data].sort((a, b) => a.name.localeCompare(b.name)));
-      setEditing(null); setDraft(empty); setNotice('Supplier saved on this computer.'); window.dispatchEvent(new Event('erp:suppliers-updated'));
+      setEditing(null); setDraft(empty); setNotice('Supplier saved successfully.'); window.dispatchEvent(new Event('erp:suppliers-updated'));
     } catch (err) { setError(message(err)); }
     finally { setBusy(false); }
   }

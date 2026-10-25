@@ -26,7 +26,7 @@ export default function ExpiryTicker() {
     }
     refresh();
     const timer = setInterval(refresh, 60000);
-    const events = ['focus', 'erp:data-saved', 'erp:sync-status'];
+    const events = ['focus', 'erp:data-saved'];
     events.forEach(event => window.addEventListener(event, refresh));
     return () => { controller.abort(); clearInterval(timer); events.forEach(event => window.removeEventListener(event, refresh)); };
   }, []);

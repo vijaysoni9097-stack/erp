@@ -46,8 +46,8 @@ function Dashboard() {
     };
     refresh();
     const timer = setInterval(refresh,30000);
-    ['focus','erp:data-saved','erp:sync-status'].forEach(event=>window.addEventListener(event,refresh));
-    return () => { controller.abort(); clearInterval(timer); ['focus','erp:data-saved','erp:sync-status'].forEach(event=>window.removeEventListener(event,refresh)); };
+    ['focus','erp:data-saved'].forEach(event=>window.addEventListener(event,refresh));
+    return () => { controller.abort(); clearInterval(timer); ['focus','erp:data-saved'].forEach(event=>window.removeEventListener(event,refresh)); };
   }, []);
   const data = useMemo(()=>records ? dashboardData(records) : null,[records]);
   const { salesByPeriod, stockByCategory, recentPrescriptions, expiryAlerts, lowStockMedicines, topSellingMedicines, supplierRows: suppliers } = data || {salesByPeriod:{},stockByCategory:[],recentPrescriptions:[],expiryAlerts:[],lowStockMedicines:[],topSellingMedicines:[],supplierRows:[]};

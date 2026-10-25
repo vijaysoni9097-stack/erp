@@ -21,7 +21,7 @@ export function clearSession() {
 
 const publicAuthPaths = ['/auth/login', '/auth/forgot-password', '/auth/reset-password']
 
-export const api = axios.create({ baseURL: import.meta.env.VITE_API_BASE_URL || '/api/v1', timeout: 10000 })
+export const api = axios.create({ baseURL: import.meta.env.VITE_API_BASE_URL || 'https://pharmacy-erp-testing-api.onrender.com/api/v1', timeout: 10000 })
 api.interceptors.request.use((config) => {
   const session = readSession()
   if (session && !publicAuthPaths.includes(config.url)) {
@@ -31,7 +31,7 @@ api.interceptors.request.use((config) => {
 })
 api.interceptors.response.use((response) => {
   const { method, url = '' } = response.config
-  if (['post', 'put', 'patch', 'delete'].includes(method) && !url.startsWith('/auth/') && !url.startsWith('/sync/')) {
+  if (['post', 'put', 'patch', 'delete'].includes(method) && !url.startsWith('/auth/')) {
     window.dispatchEvent(new Event('erp:data-saved'))
   }
   return response
@@ -47,7 +47,7 @@ export function authError(error) {
   const detail = error.response?.data?.detail
   if ([401, 403, 409, 503].includes(error.response?.status) && typeof detail === 'string') {
     return detail === 'Invalid email or password'
-      ? 'Your local pharmacy email or password is incorrect. Use the password you used before cloud setup.'
+      ? 'Your pharmacy email or password is incorrect. Use your account password.'
       : detail
   }
   if (error.response?.status === 401) return 'The email or password is incorrect.'

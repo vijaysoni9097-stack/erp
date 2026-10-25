@@ -17,8 +17,6 @@ import Machines from './pages/Machines'
 import Setting from './pages/Setting'
 import Login from './pages/Login'
 import Users from './pages/Users'
-import Sync from './pages/Sync'
-import BackgroundSync from './components/BackgroundSync'
 import ExpiryTicker from './components/ExpiryTicker'
 import { CurrencyProvider } from './contexts/CurrencyContext'
 import PasswordRecovery from './pages/PasswordRecovery'
@@ -99,7 +97,7 @@ function App() {
       setProfile(null)
     } catch (error) {
       if (error.response?.status !== 401) {
-        setSessionError('Logout could not reach the local service. Please retry to revoke your session.')
+        setSessionError('Logout could not reach the server. Please retry to revoke your session.')
       }
     }
   }
@@ -126,7 +124,6 @@ function App() {
 
   return (
     <CurrencyProvider key={profile.id} profile={profile}><div className="app">
-      <BackgroundSync key={profile.id} />
       <Navbar profile={profile} onToggleSidebar={handleToggleSidebar} onLogout={handleLogout} />
       {sessionError && <p role="alert">{sessionError}</p>}
       <div className="app-body">
@@ -135,7 +132,7 @@ function App() {
           <Routes>
             <Route path="/" element={<Navigate to={profile.role === 'pharmacist' ? '/dispense' : '/dashboard'} replace />} />
             <Route path="/login" element={<Navigate to={profile.role === 'pharmacist' ? '/dispense' : '/dashboard'} replace />} />
-            <Route path="/sync" element={<Sync />} />
+            <Route path="/sync" element={<Navigate to="/dashboard" replace />} />
             <Route path="/users" element={profile.role === 'superadmin' ? <Users profile={profile} /> : <Navigate to={profile.role === 'pharmacist' ? '/dispense' : '/dashboard'} replace />} />
             <Route path="/dispense" element={['pharmacist','admin','superadmin'].includes(profile.role) ? <Dispense profile={profile} /> : <Navigate to="/dashboard" replace />} />
             <Route path="/dashboard" element={<Dashboard />} />

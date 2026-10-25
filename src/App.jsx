@@ -1,3 +1,4 @@
+import { canAccessPage } from './services/pageAccess'
 import React, { useEffect, useState } from 'react'
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { api, AUTH_EXPIRED_EVENT, SESSION_KEY, clearSession, readSession } from './services/api'
@@ -129,7 +130,7 @@ function App() {
       <div className="app-body">
         <Sidebar isOpen={sidebarOpen} profile={profile} />
         <main className="main-content">
-          <Routes>
+          {canAccessPage(profile.role, location.pathname) ? <Routes>
             <Route path="/" element={<Navigate to={profile.role === 'pharmacist' ? '/dispense' : '/dashboard'} replace />} />
             <Route path="/login" element={<Navigate to={profile.role === 'pharmacist' ? '/dispense' : '/dashboard'} replace />} />
             <Route path="/sync" element={<Navigate to="/dashboard" replace />} />
@@ -155,10 +156,10 @@ function App() {
             <Route path="/settings/printer" element={<Setting onLogout={handleLogout} />} />
             <Route path="/settings/notifications" element={<Setting onLogout={handleLogout} />} />
             <Route path="/settings/security" element={<Setting onLogout={handleLogout} />} />
-          </Routes>
+          </Routes> : <Navigate to={location.pathname === '/purchase-orders' ? `/orders${location.search}` : '/dispense'} replace />}
         </main> 
       </div>
-      <ExpiryTicker key={profile.id} />
+      <ExpiryTicker key={profile.id} profile={profile} />
     </div></CurrencyProvider>
   )
 }

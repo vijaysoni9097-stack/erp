@@ -4,7 +4,7 @@ import { api } from '../services/api';
 import { isExpiringSoon } from '../services/expiry';
 import '../styles/ExpiryTicker.css';
 
-export default function ExpiryTicker() {
+export default function ExpiryTicker({ profile }) {
   const [items, setItems] = useState([]);
   const [paused, setPaused] = useState(false);
   const [stale, setStale] = useState(false);
@@ -33,7 +33,7 @@ export default function ExpiryTicker() {
   if (!items.length) return null;
   const text = items.map(item => `${item.name} · Batch ${item.batch_number} · Exp. ${item.expiry_date} · ${item.stock_quantity} units`).join('     •     ');
   return <div className="expiry-ticker-space"><aside className={`expiry-ticker ${paused ? 'is-paused' : ''}`} aria-label="Medicines expiring within 30 days">
-    <Link to="/expiry-alerts" className="expiry-ticker-label"><i className="fa-solid fa-triangle-exclamation" aria-hidden="true" /> Expiring soon ({items.length}){stale && <small>Last loaded data</small>}</Link>
+    <Link to={profile?.role === 'pharmacist' ? '/medicines' : '/expiry-alerts'} className="expiry-ticker-label"><i className="fa-solid fa-triangle-exclamation" aria-hidden="true" /> Expiring soon ({items.length}){stale && <small>Last loaded data</small>}</Link>
     <div className="expiry-ticker-window"><div className="expiry-ticker-track" style={{ '--ticker-duration': `${Math.max(25, text.length / 9)}s` }}><span>{text}</span><span aria-hidden="true">{text}</span></div></div>
     <button type="button" onClick={() => setPaused(value => !value)} aria-label={paused ? 'Resume expiry ticker' : 'Pause expiry ticker'} aria-pressed={paused}><i className={`fa-solid ${paused ? 'fa-play' : 'fa-pause'}`} aria-hidden="true" /></button>
   </aside></div>;

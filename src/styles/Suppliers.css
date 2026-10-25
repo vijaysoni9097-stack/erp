@@ -300,3 +300,13 @@
     align-items: flex-start;
   }
 }
+
+/* The toolbar stays above the scrolling list, with sticky column headings. */
+.suppliers-page .supplier-list-tools { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.suppliers-page .supplier-search { display: flex; align-items: center; gap: 9px; padding: 8px 12px; border: 1px solid var(--border, #dce2ea); border-radius: 7px; color: var(--text-muted, #687586); background: var(--surface, #fff); }
+.suppliers-page .supplier-search input { width: min(310px, 55vw); min-width: 0; border: 0; outline: none; color: var(--text, #2a3645); background: transparent; font: inherit; font-size: 13px; }
+.suppliers-page .supplier-search:focus-within { outline: 2px solid var(--accent, #4356d8); outline-offset: 2px; }
+.suppliers-page .supplier-list-scroll { max-height: 65dvh; overflow: auto; }
+.suppliers-page .suppliers-table { border-collapse: separate; border-spacing: 0; }
+.suppliers-page .suppliers-table thead th { position: sticky; top: 0; z-index: 1; box-shadow: 0 1px 0 var(--border, #edf0f4); }
+.suppliers-page .suppliers-panel > .panel-head { gap: 12px; flex-wrap: wrap; padding-block: 14px; }

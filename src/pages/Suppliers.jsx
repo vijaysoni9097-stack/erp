@@ -18,6 +18,9 @@ export default function Suppliers() {
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   const [retry, setRetry] = useState(0);
+  const [search, setSearch] = useState('');
+  const term = search.trim().toLowerCase();
+  const filtered = suppliers.filter(supplier => !term || ['name', 'contact_person', 'phone', 'email', 'address'].some(key => String(supplier[key] || '').toLowerCase().includes(term)));
   useEffect(() => {
     let active = true;
     setLoading(true);
@@ -58,10 +61,10 @@ export default function Suppliers() {
       <div className="settings-row">{fields.map(([key, label, maxLength]) => <div className="field-group" key={key}><label htmlFor={`supplier-${key}`}>{label}</label><input id={`supplier-${key}`} type={key === 'email' ? 'email' : 'text'} maxLength={maxLength} minLength={key === 'name' ? 2 : undefined} required={key === 'name'} disabled={busy} value={draft[key]} onChange={(event) => setDraft((current) => ({ ...current, [key]: event.target.value }))} /></div>)}</div>
       <div className="form-actions"><button type="button" className="secondary-button" disabled={busy} onClick={() => setEditing(null)}>Cancel</button><button type="submit" className="primary-button" disabled={busy}>{busy ? 'Saving…' : 'Save Supplier'}</button></div>
     </form></section>}
-    <section className="suppliers-panel"><div className="panel-head"><h2>Suppliers ({suppliers.length})</h2><button type="button" className="ghost-btn" disabled={loading || busy} onClick={() => { setError(''); setRetry((value) => value + 1); }}>Refresh</button></div>
-      {loading ? <p role="status" className="p-3">Loading suppliers…</p> : <div className="table-wrap"><table className="suppliers-table"><thead><tr><th>Supplier</th><th>Contact</th><th>Phone</th><th>Email</th><th>Actions</th></tr></thead><tbody>
-        {suppliers.map((supplier) => <tr key={supplier.id}><td>{supplier.name}</td><td>{supplier.contact_person || '—'}</td><td>{supplier.phone || '—'}</td><td>{supplier.email || '—'}</td><td><div className="d-flex gap-2"><button type="button" className="table-action" disabled={busy} onClick={() => edit(supplier)}>Edit</button><button type="button" className="table-action" disabled={busy} onClick={() => remove(supplier)}>Delete</button></div></td></tr>)}
-        {!suppliers.length && <tr><td colSpan={5}>No suppliers yet. Add your first supplier to begin.</td></tr>}
+    <section className="suppliers-panel"><div className="panel-head"><h2>Suppliers ({filtered.length}{term ? ` of ${suppliers.length}` : ''})</h2><div className="supplier-list-tools"><label className="supplier-search"><i className="fa-solid fa-magnifying-glass" aria-hidden="true" /><input type="search" aria-label="Search suppliers" placeholder="Search supplier, contact, phone or email" value={search} onChange={event => setSearch(event.target.value)} /></label><button type="button" className="ghost-btn" disabled={loading || busy} onClick={() => { setError(''); setRetry((value) => value + 1); }}>Refresh</button></div></div>
+      {loading ? <p role="status" className="p-3">Loading suppliers…</p> : <div className="table-wrap supplier-list-scroll" role="region" aria-label="Supplier list" tabIndex={0}><table className="suppliers-table"><thead><tr><th scope="col">Supplier</th><th scope="col">Contact</th><th scope="col">Phone</th><th scope="col">Email</th><th scope="col">Actions</th></tr></thead><tbody>
+        {filtered.map((supplier) => <tr key={supplier.id}><td>{supplier.name}</td><td>{supplier.contact_person || '—'}</td><td>{supplier.phone || '—'}</td><td>{supplier.email || '—'}</td><td><div className="d-flex gap-2"><button type="button" className="table-action" disabled={busy} onClick={() => edit(supplier)}>Edit</button><button type="button" className="table-action" disabled={busy} onClick={() => remove(supplier)}>Delete</button></div></td></tr>)}
+        {!filtered.length && <tr><td colSpan={5}>{suppliers.length ? 'No suppliers match your search.' : 'No suppliers yet. Add your first supplier to begin.'}</td></tr>}
       </tbody></table></div>}
     </section>
   </div>;

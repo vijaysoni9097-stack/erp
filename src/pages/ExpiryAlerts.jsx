@@ -1,9 +1,12 @@
 import { useEffect, useState } from 'react';
+import { isExpiringSoon, expiryDaysRemaining } from '../services/expiry';
 import { api } from '../services/api';
 import '../styles/ExpiryAlerts.css';
 
 export default function ExpiryAlerts() {
   const [data, setData] = useState(null);
+  const [medicines, setMedicines] = useState([]);
+  const [view, setView] = useState('soon');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
   const [reload, setReload] = useState(0);
@@ -11,19 +14,21 @@ export default function ExpiryAlerts() {
   useEffect(() => {
     const controller = new AbortController();
     setLoading(true); setError('');
-    api.get('/medicines/expiry-alerts', { signal: controller.signal, timeout: 90000 })
-      .then(({data}) => { if (!controller.signal.aborted) { setData(data); setPage(1); } })
+    Promise.all([api.get('/medicines/expiry-alerts', { signal: controller.signal, timeout: 90000 }), api.get('/medicines', { signal: controller.signal, timeout: 90000 })])
+      .then(([alerts,catalog]) => { if (!controller.signal.aborted) { setData(alerts.data); setMedicines(catalog.data); setPage(1); } })
       .catch(() => { if (!controller.signal.aborted) setError('Could not load expiry alerts. Please retry.'); })
       .finally(() => { if (!controller.signal.aborted) setLoading(false); });
     return () => controller.abort();
   }, [reload]);
-  const items = data?.items || [];
+  const soon = medicines.filter(m => isExpiringSoon(m)).map(m => ({...m, days_remaining:expiryDaysRemaining(m.expiry_date)})).sort((a,b)=>a.expiry_date.localeCompare(b.expiry_date)||a.id-b.id);
+  const items = view === 'soon' ? soon : data?.items || [];
   const pages = Math.max(1, Math.ceil(items.length / 50));
   return <div className="inventory-page">
     <header className="inventory-header"><div><p className="eyebrow">Inventory</p><h1>Expiry Alerts</h1></div><button className="primary-btn" disabled={loading} onClick={() => setReload(v => v+1)}>Refresh</button></header>
-    <section className="alerts-panel"><div className="panel-head"><h2>Medicine Expiry List</h2></div>
-      {loading ? <p role="status">Loading expiry alerts…</p> : error ? <p role="alert">{error}</p> : !data.enabled ? <p>Expiry alerts are disabled in Inventory Settings.</p> : <>
-        <p>Expired batches and medicines expiring in the next {data.lead_days} days. Includes zero-stock catalog records.</p>
+    <section className="alerts-panel"><div className="panel-head"><h2>Medicine Expiry List</h2><select aria-label="Expiry list view" value={view} onChange={event=>{setView(event.target.value);setPage(1);}}><option value="soon">Expiring Soon · 30 Days</option><option value="configured">Configured alerts</option></select></div>
+      {loading ? <p role="status">Loading expiry alerts…</p> : error ? <p role="alert">{error}</p> : view === 'configured' && !data.enabled ? <p>Expiry alerts are disabled in Inventory Settings.</p> : <>
+        <p><strong>Expiring Soon · 30 Days: {soon.length} batches</strong></p>
+        {view === 'soon' ? <p>In-stock batches expiring today through 30 days ahead, including both dates. Matches Dashboard and Medicines. Excludes expired and zero-stock batches.</p> : <p>Configured alerts include expired batches and medicines expiring within {data.lead_days} days, including zero-stock records. This broader list differs from the Expiring Soon count.</p>}
         {!items.length && <p>No medicines are due to expire in this period.</p>}
         <div className="alerts-list">{items.slice((page-1)*50,page*50).map(item => {
           const days = item.days_remaining;

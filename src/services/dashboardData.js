@@ -1,11 +1,10 @@
+import { isExpiringSoon } from './expiry.js';
 import { dayKey, saleDate, toPaise } from './dailySales.js';
 
 export function dashboardData({ medicines, sales, orders, prescriptions, customers, suppliers }, now = new Date()) {
   const today = dayKey(now);
-  const end = new Date(`${today}T12:00:00`); end.setDate(end.getDate() + 30);
-  const endDay = dayKey(end);
   const low = medicines.filter(m => m.stock_quantity <= m.reorder_level);
-  const expiry = medicines.filter(m => m.stock_quantity > 0 && m.expiry_date >= today && m.expiry_date <= endDay).sort((a,b) => a.expiry_date.localeCompare(b.expiry_date));
+  const expiry = medicines.filter(m => isExpiringSoon(m, now)).sort((a,b) => a.expiry_date.localeCompare(b.expiry_date));
   const completed = sales.filter(s => s.status === 'completed' && Number.isFinite(saleDate(s.created_at).getTime()));
   const salesByPeriod = {};
   for (const period of ['This Week', 'This Month', 'This Year']) {

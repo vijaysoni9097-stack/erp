@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { isExpiringSoon } from '../services/expiry';
 import { api } from '../services/api';
 import '../styles/Medicines.css';
 
@@ -73,14 +74,7 @@ function Medicines() {
     } finally { saveLock.current = false; setSaving(false); }
   }
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const soon = new Date(today);
-  soon.setDate(soon.getDate() + 30);
-  const expiring = (m) => {
-    const date = new Date(`${m.expiry_date}T00:00:00`);
-    return date >= today && date <= soon;
-  };
+  const expiring = isExpiringSoon;
   const supplierName = (m) => suppliers[m.supplier_id] || (m.supplier_id ? `Supplier #${m.supplier_id}` : '—');
   const filtered = useMemo(() => {
     const term = search.trim().toLowerCase();
@@ -96,7 +90,7 @@ function Medicines() {
     { label: 'Total Medicines', value: medicines.length, tone: 'blue', icon: 'fa-capsules' },
     { label: 'In Stock', value: medicines.filter(m => m.stock_quantity > 0).length, tone: 'green', icon: 'fa-pills' },
     { label: 'Low / No Stock', value: medicines.filter(m => m.stock_quantity <= m.reorder_level).length, tone: 'amber', icon: 'fa-triangle-exclamation' },
-    { label: 'Expiring in 30 Days', value: medicines.filter(expiring).length, tone: 'red', icon: 'fa-calendar-days' },
+    { label: 'Expiring Soon · 30 Days', value: medicines.filter(m => expiring(m)).length, tone: 'red', icon: 'fa-calendar-days' },
   ];
   return (
     <div className="medicines-page">
@@ -116,7 +110,7 @@ function Medicines() {
       </section>
       <section className="medicines-toolbar">
         <div className="search-box"><i className="fa-solid fa-magnifying-glass" /><input aria-label="Search medicines" type="search" placeholder="Search name, SKU, batch or supplier" value={search} onChange={e => { setSearch(e.target.value); setPage(1); }} /></div>
-        <div className="toolbar-actions">{[['all', 'All Medicines'], ['low', 'Low Stock'], ['expiring', 'Expiring Soon']].map(([key, label]) => <button key={key} type="button" aria-pressed={filter === key} className={`filter-button ${filter === key ? 'active' : ''}`} onClick={() => { setFilter(key); setPage(1); }}>{label}</button>)}</div>
+        <div className="toolbar-actions" title="Expiring Soon counts in-stock batches expiring today through 30 days ahead; expired and zero-stock batches are excluded.">{[['all', 'All Medicines'], ['low', 'Low Stock'], ['expiring', 'Expiring Soon']].map(([key, label]) => <button key={key} type="button" aria-pressed={filter === key} className={`filter-button ${filter === key ? 'active' : ''}`} onClick={() => { setFilter(key); setPage(1); }}>{label}</button>)}</div>
       </section>
       <section className="medicines-panel">
         <div className="panel-head"><h2>Medicine Inventory</h2><span>{!loading && !error && `${filtered.length.toLocaleString()} medicines`}</span></div>

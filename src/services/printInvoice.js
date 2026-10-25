@@ -21,6 +21,7 @@ export function printInvoice(invoice, medicines, money) {
   add('p', `GSTIN: ${invoice.company?.gstin || 'Not recorded on this invoice'}`);
   add('p', `Date: ${saleDate(invoice.created_at).toLocaleString('en-IN')}`);
   if (invoice.patient) add('p', `Patient: ${invoice.patient}`);
+  if (invoice.mobile) add('p', `Customer mobile: ${invoice.mobile}`);
   if (invoice.doctor) add('p', `Prescribed by: ${invoice.doctor}`);
   const table = add('table', '');
   const head = add('tr', '', add('thead', '', table));

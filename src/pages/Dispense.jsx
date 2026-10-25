@@ -4,6 +4,7 @@ import { api } from '../services/api';
 import TodaySales from '../components/TodaySales';
 import BillingDetails from '../components/BillingDetails';
 import '../styles/StockManagement.css';
+import { normalizeCustomerMobile } from '../services/customerMobile';
 import { dayKey } from '../services/dailySales';
 import { validDiscount, readDailyDiscount, saveDailyDiscount, applyBillDiscount } from '../services/dailyDiscount';
 import { discountLine } from '../services/discounts';
@@ -33,6 +34,11 @@ export default function Dispense({profile}) {
   const [customerDiscount, setCustomerDiscount] = useState('');
   const [discountNotice, setDiscountNotice] = useState('');
   const [patient, setPatient] = useState('');
+  const [mobile, setMobile] = useState('');
+  const [customerMatches, setCustomerMatches] = useState([]);
+  const [lookupMessage, setLookupMessage] = useState('');
+  const nameEdited = useRef(false);
+  const autoName = useRef('');
   const [prescriber, setPrescriber] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('cash');
   const [cashReceived, setCashReceived] = useState('');
@@ -50,6 +56,26 @@ export default function Dispense({profile}) {
     if (receipt) receiptRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }, [receipt]);
   const locked = busy || Boolean(pending);
+
+  const normalizedMobile = normalizeCustomerMobile(mobile);
+  useEffect(() => {
+    setCustomerMatches([]);setLookupMessage('');
+    if (locked || !mobile.trim() || !normalizedMobile) return;
+    const controller = new AbortController();
+    const timer = setTimeout(async () => {
+      setLookupMessage('Checking saved customer…');
+      try {
+        const {data} = await api.get('/customers/lookup',{params:{phone:normalizedMobile},signal:controller.signal});
+        if(controller.signal.aborted)return;
+        setCustomerMatches(data);
+        if(data.length===1) {
+          if(!nameEdited.current){setPatient(data[0].full_name);autoName.current=data[0].full_name;setPaymentConfirmed(false);}
+          setLookupMessage('Saved customer found. Confirm the name before checkout.');
+        } else setLookupMessage(data.length ? 'This mobile is shared. Choose the customer below.' : 'New mobile number. Enter the customer name to save it with this sale.');
+      } catch {if(!controller.signal.aborted)setLookupMessage('Customer lookup unavailable. Enter the name manually; checkout will still check saved customers.');}
+    },400);
+    return () => {clearTimeout(timer);controller.abort();};
+  },[mobile,normalizedMobile,locked]);
 
   useEffect(() => {
     const checkDay = () => setDiscountDay(dayKey());
@@ -137,13 +163,13 @@ export default function Dispense({profile}) {
   async function checkout(event) {
     event.preventDefault();
     if (!pending && dayKey() !== discountDay) { setDiscountDay(dayKey()); setError('A new day has started. Set today’s discount before completing this sale.'); return; }
-    if(submitting.current || !paymentConfirmed || (!pending && (!cart.length || invalid || !paymentValid || !discountReady || !patient.trim() || !prescriber.trim()))) return;
-    const payload = pending || {request_id:crypto.randomUUID(),patient_name:patient.trim(),prescribed_by:prescriber.trim(),payment:{method:paymentMethod,tendered:tendered.toFixed(2),reference:paymentMethod === 'cash' ? null : paymentReference.trim(),confirmed:paymentConfirmed},items:cart.map(item => ({medicine_id:item.id,quantity:item.quantity,discount_percent:Number(item.discount_percent)}))};
+    if(submitting.current || !paymentConfirmed || (!pending && (!cart.length || invalid || !paymentValid || !discountReady || normalizedMobile === null || !patient.trim()))) return;
+    const payload = pending || {request_id:crypto.randomUUID(),patient_name:patient.trim(),prescribed_by:prescriber.trim() || 'self',customer_mobile:normalizedMobile || null,payment:{method:paymentMethod,tendered:tendered.toFixed(2),reference:paymentMethod === 'cash' ? null : paymentReference.trim(),confirmed:paymentConfirmed},items:cart.map(item => ({medicine_id:item.id,quantity:item.quantity,discount_percent:Number(item.discount_percent)}))};
     submitting.current = true; setBusy(true); setPending(payload); setError('');
     try {
       const {data} = await api.post('/sales/checkout',payload,{timeout:90000});
-      setReceipt({...data,patient:payload.patient_name,doctor:payload.prescribed_by});
-      setCart([]); setCustomerDiscount(''); setDiscountNotice(''); setCashReceived(''); setPaymentReference(''); setPaymentConfirmed(false); setPatient(''); setPrescriber(''); setPending(null); setReload(v=>v+1);
+      setReceipt({...data,patient:payload.patient_name,doctor:payload.prescribed_by,mobile:payload.customer_mobile});
+      setCart([]); setCustomerDiscount(''); setDiscountNotice(''); setCashReceived(''); setPaymentReference(''); setPaymentConfirmed(false); setPatient(''); setPrescriber(''); setMobile('');setCustomerMatches([]);setLookupMessage('');nameEdited.current=false;autoName.current=''; setPending(null); setReload(v=>v+1);
     } catch(err) {
       setError(errorText(err));
       // Keep the exact request after network/server errors; replay is idempotent.
@@ -182,8 +208,14 @@ export default function Dispense({profile}) {
       <form ref={billRef} className="dispense-bill" onSubmit={checkout}>
     {receipt && <section className="dispense-success dispense-receipt" ref={receiptRef} role="status"><i className="fa-solid fa-circle-check" aria-hidden="true" /><div><strong>Invoice INV-{String(receipt.id).padStart(6, '0')} generated</strong><p>GSTIN: {receipt.company?.gstin || 'Not recorded'} · GST / tax recorded: {money(receipt.tax_amount)}</p><p>{receipt.patient} · {receipt.items.reduce((n,item)=>n+item.quantity,0)} units · Total {money(receipt.total_amount)}. Stock has been updated.</p>{receipt.payment && <p>Paid by {receipt.payment.method.replace('_',' ')} · Received {money(receipt.payment.tendered)}{Number(receipt.payment.change)>0 ? ` · Change due ${money(receipt.payment.change)}` : ''}{receipt.payment.reference ? ` · Ref: ${receipt.payment.reference}` : ''}</p>}</div><button type="button" className="dispense-print" onClick={()=>printInvoice(receipt,medicines,money)}><i className="fa-solid fa-print" aria-hidden="true" /> Print / Save PDF</button><p className="dispense-print-help">No printer available? Choose “Save as PDF” in the print dialog to save your bill.</p><button type="button" className="dispense-receipt-dismiss" onClick={()=>setReceipt(null)} aria-label="Dismiss sale confirmation">×</button></section>}
         <div className="dispense-section-title"><div><span className="dispense-step">02</span><h2>Patient & bill</h2></div><span className="dispense-draft">New sale</span></div>
-        <fieldset disabled={locked}><label className="dispense-field">Patient name <span>*</span><input required minLength={2} maxLength={150} value={patient} onChange={e=>setPatient(e.target.value)} placeholder="Enter patient's full name" autoComplete="off" /></label><label className="dispense-field">Prescribed by <span>*</span><input required minLength={2} maxLength={150} list="dispense-doctors" value={prescriber} onChange={e=>setPrescriber(e.target.value)} placeholder="Select or type doctor's name" autoComplete="off" /><datalist id="dispense-doctors">{doctors.map(name=><option key={name} value={name} />)}</datalist></label></fieldset>
-        <p className="dispense-hint">{doctorError ? 'Doctor suggestions are unavailable. Enter the prescriber’s name manually.' : 'Choose a known prescriber or enter an external doctor’s name.'}</p>
+        <fieldset disabled={locked}>
+          <label className="dispense-field">Customer mobile <small>Optional</small><input type="tel" maxLength={40} autoComplete="off" value={mobile} placeholder="10-digit Indian mobile or +country code" aria-describedby="customer-mobile-hint" onChange={event=>{if(autoName.current){setPatient('');autoName.current='';nameEdited.current=false;}else nameEdited.current=Boolean(patient.trim());setMobile(event.target.value);setPaymentConfirmed(false);}} /></label>
+          <p id="customer-mobile-hint" className="dispense-hint" role="status">{normalizedMobile===null?'Enter a valid mobile number with an optional country code.':lookupMessage || 'Enter a saved mobile number to find the customer name.'}</p>
+          {customerMatches.length>0 && <div className="dispense-customer-matches">{customerMatches.map(customer=><button type="button" key={customer.id} onClick={()=>{setPatient(customer.full_name);autoName.current=customer.full_name;nameEdited.current=false;setPaymentConfirmed(false);}}>{customer.full_name}</button>)}</div>}
+          <label className="dispense-field">Patient name <span>*</span><input required minLength={2} maxLength={150} value={patient} onChange={e=>{nameEdited.current=true;autoName.current='';setPatient(e.target.value);setPaymentConfirmed(false);}} placeholder="Enter patient's full name" autoComplete="off" /></label>
+          <label className="dispense-field">Prescribed by <small>Optional</small><input minLength={2} maxLength={150} list="dispense-doctors" value={prescriber} onChange={e=>{setPrescriber(e.target.value);setPaymentConfirmed(false);}} placeholder="Self (default) or doctor’s name" autoComplete="off" /><datalist id="dispense-doctors">{doctors.map(name=><option key={name} value={name} />)}</datalist></label>
+        </fieldset>
+        <p className="dispense-hint">{doctorError ? 'Doctor suggestions are unavailable. Leave blank for Self or enter the prescriber’s name.' : 'Leave blank for Self, or select or enter the prescriber’s name.'}</p>
         <div className="dispense-cart-heading"><h3>Selected medicines</h3><span>{cart.length} items</span></div>
         {!cart.length ? <div className="dispense-cart-empty"><i className="fa-solid fa-basket-shopping" aria-hidden="true" /><p>Your bill starts here</p><small>Add medicines from the list.</small></div> : <div className="dispense-cart">{cart.map(item=>{const m=stock.get(item.id);return <div className="dispense-cart-item" key={item.id}><div className="dispense-cart-name"><strong>{m?.name || 'Unavailable medicine'}</strong><button type="button" aria-label={`Remove ${m?.name || 'medicine'}`} disabled={locked} onClick={()=>{setCart(items=>items.filter(i=>i.id!==item.id));setPaymentConfirmed(false);}}><i className="fa-solid fa-xmark" aria-hidden="true" /></button></div><small>Batch {m?.batch_number} · {money(m?.selling_price || 0)} / unit</small><div className="dispense-cart-line"><div className="dispense-quantity"><button type="button" aria-label={`Decrease ${m?.name} quantity`} disabled={locked || item.quantity<=1} onClick={()=>quantity(item.id,item.quantity-1)}>−</button><input aria-label={`Quantity for ${m?.name}`} type="number" min="1" max={m?.stock_quantity || 1} step="1" required disabled={locked} value={item.quantity} onChange={e=>quantity(item.id,e.target.value)} /><button type="button" aria-label={`Increase ${m?.name} quantity`} disabled={locked || item.quantity>=m?.stock_quantity} onClick={()=>quantity(item.id,Number(item.quantity)+1)}>+</button></div><strong>{money(discountLine(m?.selling_price||0,item.quantity,item.discount_percent)?.total||0)}</strong></div><label className="dispense-line-discount">Discount %<input type="number" min="0" max="100" step="0.01" required disabled={locked} aria-label={`Discount percentage for ${m?.name}`} value={item.discount_percent} onChange={event=>{setCart(items=>items.map(row=>row.id===item.id?{...row,discount_percent:event.target.value}:row));setPaymentConfirmed(false);}}/><span>Save {money(discountLine(m?.selling_price||0,item.quantity,item.discount_percent)?.discount||0)}</span></label></div>;})}</div>}
         <div className="dispense-totals"><div><span>Total units</span><strong>{units || 0}</strong></div><div><span>Before discount</span><strong>{money(grossTotal)}</strong></div><div><span>Discount</span><strong>−{money(totalDiscount)}</strong></div><div><span>Subtotal</span><strong>{money(total)}</strong></div><div><span>GST / tax</span><strong>{money(0)}</strong></div><div className="dispense-grand-total"><span>Bill total</span><strong>{money(total)}</strong></div></div>
@@ -196,7 +228,7 @@ export default function Dispense({profile}) {
         {invalid && <p className="dispense-error" role="alert">Check quantities and discounts: quantities must be whole numbers within stock, and discounts must be 0–100% with up to two decimal places.</p>}
         {error && <p className="dispense-error" role="alert">{error}</p>}
         {pending && !busy && <p className="dispense-hint">Keep this page open and retry this bill to confirm its status without creating a duplicate.</p>}
-        <button className="dispense-checkout" type="submit" disabled={busy || !paymentConfirmed || (!pending && (loading || Boolean(loadError) || !cart.length || invalid || !paymentValid || !discountReady))}>{busy ? 'Confirming sale…' : pending ? 'Retry / confirm this sale' : `Complete paid sale · ${money(total)}`} <i className="fa-solid fa-arrow-right" aria-hidden="true" /></button>
+        <button className="dispense-checkout" type="submit" disabled={busy || !paymentConfirmed || (!pending && (loading || Boolean(loadError) || !cart.length || invalid || !paymentValid || !discountReady || normalizedMobile === null))}>{busy ? 'Confirming sale…' : pending ? 'Retry / confirm this sale' : `Complete paid sale · ${money(total)}`} <i className="fa-solid fa-arrow-right" aria-hidden="true" /></button>
         <p className="dispense-footer-note"><i className="fa-solid fa-shield-halved" aria-hidden="true" /> Stock and final prices are checked when you complete the sale.</p>
       </form>
     </div>

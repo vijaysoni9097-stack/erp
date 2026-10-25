@@ -31,3 +31,5 @@
 .dispense-discount-summary .dispense-discount-caption,.dispense-discount-summary .dispense-discount-status{font-size:10px;margin:8px 0 0;line-height:1.4}.dispense-discount-summary .dispense-discount-status{color:var(--accent)}
 @media(max-width:1000px){.dispense-top-summary{grid-template-columns:1fr}.dispense-top-summary .today-sales-caption{flex-basis:auto;margin-left:auto}}
 @media(max-width:480px){.dispense-discount-fields{flex-wrap:wrap}.dispense-discount-fields label{min-width:100px}.dispense-discount-fields label:last-child{flex-basis:100%}.dispense-discount-heading small{flex-basis:100%}}
+
+.dispense-field>small{font-size:10px;font-weight:400;color:var(--text-muted);margin-left:5px}.dispense-customer-matches{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 14px}.dispense-customer-matches button{font-size:11px;background:var(--accent-bg);color:var(--accent);border:1px solid var(--accent-border);border-radius:7px;padding:7px 10px}

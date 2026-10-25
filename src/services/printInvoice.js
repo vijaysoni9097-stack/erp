@@ -16,20 +16,25 @@ export function printInvoice(invoice, medicines, money) {
   const number = `INV-${String(invoice.id).padStart(6, '0')}`;
   doc.title = number;
   add('h1', `Pharmacy bill · ${number}`);
+  if (invoice.company?.company_name) add('h2', invoice.company.company_name);
+  if (invoice.company?.address) add('p', invoice.company.address);
+  add('p', `GSTIN: ${invoice.company?.gstin || 'Not recorded on this invoice'}`);
   add('p', `Date: ${saleDate(invoice.created_at).toLocaleString('en-IN')}`);
   if (invoice.patient) add('p', `Patient: ${invoice.patient}`);
   if (invoice.doctor) add('p', `Prescribed by: ${invoice.doctor}`);
   const table = add('table', '');
   const head = add('tr', '', add('thead', '', table));
-  ['Medicine / batch', 'Quantity', 'Unit price', 'Amount'].forEach(label => add('th', label, head));
+  ['Medicine / batch', 'Quantity', 'Original unit price', 'Discount %', 'Amount'].forEach(label => add('th', label, head));
   const body = add('tbody', '', table);
   const catalog = new Map(medicines.map(m => [m.id, m]));
   invoice.items.forEach(item => {
     const medicine = catalog.get(item.medicine_id);
     const row = add('tr', '', body);
-    [medicine ? `${medicine.name} · Batch ${medicine.batch_number}` : `Medicine #${item.medicine_id}`, item.quantity, money(item.unit_price), money(item.line_total)].forEach(value => add('td', value, row));
+    [medicine ? `${medicine.name} · Batch ${medicine.batch_number}` : `Medicine #${item.medicine_id}`, item.quantity, money(item.original_unit_price ?? item.unit_price), `${Number(item.discount_percent || 0)}%`, money(item.line_total)].forEach(value => add('td', value, row));
   });
-  add('p', `Subtotal: ${money(invoice.subtotal)} · Tax: ${money(invoice.tax_amount)}`);
+  const discount = invoice.items.reduce((sum,item)=>sum+Math.round(Number(item.discount_amount||0)*100),0)/100;
+  add('p', `Discount saved: ${money(discount)}`);
+  add('p', `Subtotal: ${money(invoice.subtotal)} · GST / tax recorded: ${money(invoice.tax_amount)}`);
   add('h2', `Bill total: ${money(invoice.total_amount)}`);
   if (invoice.payment) {
     const p = invoice.payment;

@@ -1,10 +1,12 @@
 import React from 'react';
+import CompanyRegistration from './CompanyRegistration';
 import EmployeeProfile from './EmployeeProfile';
 import ChangePassword from './ChangePassword';
 import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import '../styles/Settings.css';
 
 const settingsTabs = [
+  { key: 'company', label: 'Company Registration', path: '/settings/company', icon: 'fa-building' },
   { key: 'profile', label: 'Profile Settings', path: '/settings/profile', icon: 'fa-user-gear' },
   { key: 'password', label: 'Change Password', path: '/settings/password', icon: 'fa-lock' },
   { key: 'prescription', label: 'Prescription Preferences', path: '/settings/prescription-preferences', icon: 'fa-prescription' },
@@ -29,6 +31,7 @@ const renderToggleRow = (title, description, checked = true) => (
 
 function renderSection(activeKey) {
   switch (activeKey) {
+    case 'company': return <CompanyRegistration />;
     case 'password':
       return <ChangePassword />;
 

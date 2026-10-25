@@ -148,6 +148,7 @@ function App() {
             <Route path="/machines" element={<Machines />} />
             <Route path="/messages" element={<Messages />} />
             <Route path="/settings" element={<Navigate to="/settings/profile" replace />} />
+            <Route path="/settings/company" element={<Setting onLogout={handleLogout} />} />
             <Route path="/settings/profile" element={<Setting onLogout={handleLogout} />} />
             <Route path="/settings/password" element={<Setting onLogout={handleLogout} />} />
             <Route path="/settings/prescription-preferences" element={<Setting onLogout={handleLogout} />} />

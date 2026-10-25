@@ -65,10 +65,17 @@ def run(connection):
     denied(lambda: rpc('erp_stock_command',device,uid(),'allocate',Jsonb({'medicine_id':medicine,'device_id':device2,'quantity':1})))
     def sale(n): return {'id':uid(),'tax_amount':0,'occurred_at':'2026-10-11T12:00:00Z','items':[{'medicine_id':medicine,'quantity':n,'unit_price':'3.00'}]}
     sale_op=uid(); payload=sale(6)
-    payload['payment']={'method':'cash','amount':'18.00','tendered':'20.00','change':'2.00','reference':None}
+    payload['items'][0].update(unit_price='3.00',original_unit_price='3.00',discount_percent='10.00')
+    payload['company']={'company_name':'Test Registered Company','address':'Test address','gstin':'27ABCDE1234F1Z5'}
+    payload['payment']={'method':'cash','amount':'16.20','tendered':'20.00','change':'3.80','reference':None}
+    denied(lambda: rpc('erp_stock_command',device,uid(),'sale',Jsonb({**payload,'items':[{**payload['items'][0],'discount_percent':'101'}]})))
     denied(lambda: rpc('erp_stock_command',device,uid(),'sale',Jsonb({**payload,'payment':{**payload['payment'],'tendered':'1.00'}})))
     first=rpc('erp_stock_command',device,sale_op,'sale',Jsonb(payload))
     assert first['sale']['payment']==payload['payment']
+    assert first['sale']['company']==payload['company']
+    assert float(first['sale']['items'][0]['discount_percent'])==10
+    assert float(first['sale']['items'][0]['original_unit_price'])==3
+    assert float(first['sale']['total_amount'])==16.20
     denied(lambda: rpc('erp_stock_command',device,sale_op,'sale',Jsonb({**payload,'payment':{**payload['payment'],'tendered':'30.00','change':'12.00'}})))
     assert rpc('erp_stock_command',device,sale_op,'sale',Jsonb(payload))==first
     denied(lambda: rpc('erp_stock_command',device,uid(),'sale',Jsonb(sale(1))))

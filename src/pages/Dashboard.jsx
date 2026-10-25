@@ -94,6 +94,12 @@ function Dashboard() {
         ))}
       </div>
 
+      <section className="dashboard-panel dashboard-collections" aria-labelledby="collections-title">
+        <div className="panel-header"><h2 id="collections-title">Today’s Collections</h2><span className="dashboard-period-note">Completed invoices · local day</span></div>
+        <div className="dashboard-collection-grid">{[['cash', 'Cash', 'fa-money-bill-wave'], ['card', 'Card', 'fa-credit-card'], ['upi', 'UPI', 'fa-mobile-screen-button']].map(([method, label, icon]) => <div className="dashboard-collection" key={method}><span className="dashboard-collection-icon"><i className={`fa-solid ${icon}`} aria-hidden="true" /></span><div><p>{label}</p><strong>{data ? formatMoney(data.todayPayments[method]) : '—'}</strong></div></div>)}</div>
+        {data && (data.todayPayments.bank_transfer > 0 || data.todayPayments.unrecorded > 0) && <p className="dashboard-collection-note">{data.todayPayments.bank_transfer > 0 && <span>Bank transfer: {formatMoney(data.todayPayments.bank_transfer)}. </span>}{data.todayPayments.unrecorded > 0 && <span>Invoices without recorded payment details: {formatMoney(data.todayPayments.unrecorded)}.</span>}</p>}
+      </section>
+
       <div className="dashboard-chart-grid">
         <article className="dashboard-panel sales-panel">
           <div className="panel-header">

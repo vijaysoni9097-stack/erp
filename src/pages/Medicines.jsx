@@ -54,6 +54,15 @@ function Medicines() {
     return () => controller.abort();
   }, [reload]);
 
+  function fillGenericName(event) {
+    const name = event.target.value.trim().toLowerCase();
+    if (!name) return;
+    const matches = medicines.filter(medicine => medicine.name.trim().toLowerCase() === name);
+    const generics = [...new Map(matches.map(medicine => medicine.generic_name?.trim()).filter(Boolean).map(value => [value.toLowerCase(), value])).values()];
+    // Only fill a known, unambiguous generic; never guess between formulations.
+    if (generics.length === 1) event.target.form.elements.namedItem('generic_name').value = generics[0];
+  }
+
   async function addMedicine(event) {
     event.preventDefault();
     if (saveLock.current) return;
@@ -141,13 +150,13 @@ function Medicines() {
           <div className="add-medicine-dialog-body">
             {saveError && <p className="add-medicine-error" role="alert">{saveError}</p>}
             <fieldset disabled={saving} className="add-medicine-fields">
-              {[['name','Medicine Name','text',150],['generic_name','Generic Name','text',150],['sku','SKU','text',50],['batch_number','Batch Number','text',80],['expiry_date','Expiry Date','date'],['purchase_price','Purchase Price','number'],['selling_price','Selling Price','number'],['reorder_level','Reorder Level','number']].map(([key,label,type,max]) => <label key={key}>{label}{key === 'generic_name' && ' (optional)'}<input autoFocus={key === 'name'} name={key} type={type} list={nameSuggestions[key] ? `medicine-suggestions-${key}` : undefined} autoComplete={nameSuggestions[key] ? "off" : undefined} required={key !== 'generic_name'} maxLength={max} minLength={['name','sku'].includes(key) ? 2 : undefined} min={type === 'number' ? 0 : undefined} step={key.includes('price') ? '0.01' : type === 'number' ? '1' : undefined} defaultValue={key === 'reorder_level' ? 10 : undefined} /></label>)}
+              {[['name','Medicine Name','text',150],['generic_name','Generic Name','text',150],['sku','SKU','text',50],['batch_number','Batch Number','text',80],['expiry_date','Expiry Date','date'],['purchase_price','Purchase Price','number'],['selling_price','Selling Price','number'],['reorder_level','Reorder Level','number']].map(([key,label,type,max]) => <label key={key}>{label}{key === 'generic_name' && ' (optional)'}<input autoFocus={key === 'name'} name={key} type={type} onChange={key === 'name' ? fillGenericName : undefined} list={nameSuggestions[key] ? `medicine-suggestions-${key}` : undefined} autoComplete={nameSuggestions[key] ? "off" : undefined} required={key !== 'generic_name'} maxLength={max} minLength={['name','sku'].includes(key) ? 2 : undefined} min={type === 'number' ? 0 : undefined} step={key.includes('price') ? '0.01' : type === 'number' ? '1' : undefined} defaultValue={key === 'reorder_level' ? 10 : undefined} /></label>)}
               {Object.entries(nameSuggestions).map(([key, values]) => <datalist id={`medicine-suggestions-${key}`} key={key}>{values.map(value => <option key={value} value={value} />)}</datalist>)}
               <label>Supplier<select name="supplier_id"><option value="">No supplier</option>{Object.entries(suppliers).map(([id,name]) => <option key={id} value={id}>{name}</option>)}</select></label>
             </fieldset>
             {supplierError && <p className="add-medicine-note" role="status">Supplier options are unavailable. Close this form and refresh to reload them, or save without a supplier.</p>}
-            <p className="add-medicine-note">Start typing a medicine or generic name to see suggestions from your saved catalog. You can also enter a new name.</p>
-            <p className="add-medicine-note">The medicine starts with zero stock. Receive stock separately before selling.</p>
+            <p className="add-medicine-note">Start typing a medicine or generic name to see suggestions from your saved catalog. Selecting a saved medicine fills its generic name when available. You can edit it or enter a new name.</p>
+            <p className="add-medicine-note">Saving always creates a separate medicine entry, even when the medicine name matches an existing entry and you change the generic name. Use a unique SKU for the new entry. It starts with zero stock; receive stock separately before selling.</p>
           </div>
           <footer className="add-medicine-dialog-footer"><button type="button" className="secondary-btn" disabled={saving} onClick={() => setAdding(false)}>Cancel</button><button type="submit" className="primary-btn" disabled={saving}>{saving ? 'Saving…' : 'Save Medicine'}</button></footer>
         </form>}

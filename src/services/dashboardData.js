@@ -6,6 +6,15 @@ export function dashboardData({ medicines, sales, orders, prescriptions, custome
   const low = medicines.filter(m => m.stock_quantity <= m.reorder_level);
   const expiry = medicines.filter(m => isExpiringSoon(m, now)).sort((a,b) => a.expiry_date.localeCompare(b.expiry_date));
   const completed = sales.filter(s => s.status === 'completed' && Number.isFinite(saleDate(s.created_at).getTime()));
+  const todayPayments = { cash: 0, card: 0, upi: 0, bank_transfer: 0, unrecorded: 0 };
+  for (const sale of completed) {
+    if (dayKey(saleDate(sale.created_at)) !== today) continue;
+    const method = sale.payment?.method;
+    if (['cash', 'card', 'upi', 'bank_transfer'].includes(method) && sale.payment.amount != null) {
+      todayPayments[method] += toPaise(sale.payment.amount);
+    } else todayPayments.unrecorded += toPaise(sale.total_amount);
+  }
+  for (const method of Object.keys(todayPayments)) todayPayments[method] /= 100;
   const salesByPeriod = {};
   for (const period of ['This Week', 'This Month', 'This Year']) {
     const start = new Date(`${today}T12:00:00`);
@@ -35,6 +44,7 @@ export function dashboardData({ medicines, sales, orders, prescriptions, custome
   const customerMap = new Map(customers.map(c=>[c.id,c.full_name]));
   const supplierMap = new Map(suppliers.map(s=>[s.id,s.name]));
   return {
+    todayPayments,
     todaySales:completed.filter(s=>dayKey(saleDate(s.created_at))===today).reduce((sum,s)=>sum+toPaise(s.total_amount),0)/100,
     totalMedicines:medicines.length, pendingOrders:orders.filter(o=>['pending_approval','approved','ordered','partially_received'].includes(o.status)).length,
     low, expiry, salesByPeriod, stockByCategory, totalStock:stockByCategory.reduce((n,c)=>n+c.value,0),

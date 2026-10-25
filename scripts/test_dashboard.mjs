@@ -33,3 +33,14 @@ const monthly = salesTrendForDates([sale],'2026-01-01','2026-12-31');
 assert.equal(monthly.length,12);
 assert.equal(monthly[9].revenue,12.35);
 console.log('Custom sales trend checks passed: inclusive dates, invalid dates, empty days, completed-only sales and monthly grouping.');
+const collections = dashboardData({...empty, sales: [
+  {...sale, payment: {method:'cash', amount:'12.35', tendered:'20.00', change:'7.65'}},
+  {...sale, payment: {method:'card', amount:'8.10'}},
+  {...sale, payment: {method:'upi', amount:'4.20'}},
+  {...sale, payment: {method:'bank_transfer', amount:'2.00'}},
+  {...sale, status:'voided', payment:{method:'cash', amount:'999.00'}},
+  {...sale, created_at:new Date(2026,9,18,9).toISOString(), payment:{method:'cash',amount:'999.00'}},
+  sale,
+]}, now).todayPayments;
+assert.deepEqual(collections, {cash:12.35,card:8.10,upi:4.20,bank_transfer:2,unrecorded:12.35});
+console.log('Payment collections passed: net cash after change, card, UPI, bank transfer, missing payment, voided and previous-day exclusions.');

@@ -245,3 +245,12 @@
 .dashboard-page .trend-range-error{padding:30px 20px;color:#a13d35;font-size:12px}
 .dashboard-page .trend-period select:focus-visible,.dashboard-page .trend-date-range input:focus-visible{outline:3px solid var(--focus-ring);outline-offset:3px}
 @media(max-width:540px){.dashboard-page .trend-date-range{gap:8px;padding:12px 16px}.dashboard-page .trend-date-range label{flex:1;min-width:100px}.dashboard-page .trend-date-range input{width:100%;min-width:0}.dashboard-page .trend-date-caption{flex-basis:100%;padding-bottom:0}}
+
+.dashboard-collections { margin-bottom: 24px; }
+.dashboard-collection-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; padding: 0 22px 22px; }
+.dashboard-collection { display: flex; align-items: center; gap: 14px; padding: 18px; background: var(--surface-muted, #f7f9fc); border: 1px solid var(--border, #e5e7eb); border-radius: 10px; min-width: 0; }
+.dashboard-collection-icon { color: var(--accent, #4356d8); font-size: 22px; }
+.dashboard-collection p { margin: 0 0 6px; color: var(--text-muted, #677285); font-size: 13px; }
+.dashboard-collection strong { color: var(--text-h, #1f2937); font-size: clamp(18px, 2vw, 26px); overflow-wrap: anywhere; }
+.dashboard-collection-note { margin: 0; padding: 0 22px 20px; color: var(--text-muted, #677285); font-size: 13px; }
+@media (max-width: 640px) { .dashboard-collection-grid { grid-template-columns: 1fr; } }

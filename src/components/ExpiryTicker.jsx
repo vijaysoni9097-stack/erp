@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../services/api';
 import { isExpiringSoon } from '../services/expiry';
+import { dayKey } from '../services/dailySales';
 import '../styles/ExpiryTicker.css';
 
 export default function ExpiryTicker({ profile }) {
@@ -15,7 +16,7 @@ export default function ExpiryTicker({ profile }) {
       if (busy) return;
       busy = true;
       try {
-        const { data } = await api.get('/medicines', { signal: controller.signal, timeout: 90000 });
+        const { data } = await api.get('/medicines/expiring-soon', { params: { today: dayKey() }, signal: controller.signal, timeout: 90000 });
         if (!Array.isArray(data)) throw new Error('Invalid medicine catalog');
         if (!controller.signal.aborted) {
           setItems(data.filter(m => isExpiringSoon(m)).sort((a, b) => a.expiry_date.localeCompare(b.expiry_date)));

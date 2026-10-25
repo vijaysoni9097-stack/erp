@@ -110,17 +110,13 @@ export default function Dispense({profile}) {
   useEffect(() => {
     const controller = new AbortController();
     setLoading(true); setLoadError(''); setDoctorError(false);
-    Promise.allSettled([
-      api.get('/medicines', {signal:controller.signal,timeout:90000}),
-      api.get('/sales/prescribers', {signal:controller.signal,timeout:90000}),
-    ]).then(([catalog,prescribers]) => {
-      if(controller.signal.aborted) return;
-      if(catalog.status === 'fulfilled') setMedicines(catalog.value.data);
-      else setLoadError('Medicine stock could not be loaded. Please refresh to try again.');
-      if(prescribers.status === 'fulfilled') setDoctors(prescribers.value.data);
-      else setDoctorError(true);
-      setLoading(false);
-    });
+    api.get('/medicines', {signal:controller.signal,timeout:90000})
+      .then(({data}) => { if (!controller.signal.aborted) setMedicines(data); })
+      .catch(() => { if (!controller.signal.aborted) setLoadError('Medicine stock could not be loaded. Please refresh to try again.'); })
+      .finally(() => { if (!controller.signal.aborted) setLoading(false); });
+    api.get('/sales/prescribers', {signal:controller.signal,timeout:90000})
+      .then(({data}) => { if (!controller.signal.aborted) setDoctors(data); })
+      .catch(() => { if (!controller.signal.aborted) setDoctorError(true); });
     return () => controller.abort();
   }, [reload]);
 

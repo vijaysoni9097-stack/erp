@@ -32,7 +32,9 @@ export default function TodaySales({ medicines, refreshKey }) {
   useEffect(() => {
     const controller = new AbortController();
     setLoading(true); setError('');
-    api.get('/sales', { signal: controller.signal, timeout: 90000 }).then(({ data }) => {
+    const start = new Date(`${day}T00:00:00`);
+    const end = new Date(start); end.setDate(end.getDate() + 1);
+    api.get('/sales', { signal: controller.signal, timeout: 90000, params: {from_at:start.toISOString(),to_at:end.toISOString()} }).then(({ data }) => {
       if (!controller.signal.aborted) {
         if (!Array.isArray(data)) throw new Error('Invalid sales response');
         setSales(data);

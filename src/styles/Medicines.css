@@ -438,3 +438,17 @@
 .medicines-page .medicines-table thead th { position: sticky; top: 0; z-index: 2; background: var(--surface-muted, #fafbfc); box-shadow: 0 1px 0 var(--border, #edf0f4); }
 .medicines-page .medicine-inventory-scroll:focus-visible { outline: 2px solid var(--accent, #4356d8); outline-offset: -2px; }
 @media print { .medicines-page .medicine-inventory-scroll { max-height: none; overflow: visible; } }
+
+/* Match the dashboard overview metrics without changing other page summaries. */
+.medicines-page .summary-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; margin-bottom: 22px; }
+.medicines-page .summary-card { min-width: 0; min-height: 142px; padding: 16px 14px; border: 1px solid var(--border); border-radius: 13px; background: var(--surface, #fff); box-shadow: none; }
+.medicines-page .summary-copy { padding-right: 0; }
+.medicines-page .summary-copy p { padding-top: 34px; min-height: 66px; color: var(--text-muted); font-size: 11px; font-weight: 500; line-height: 1.4; }
+.medicines-page .summary-row { margin-top: 4px; }
+.medicines-page .summary-row strong { color: var(--text-h, #111b31); font-size: clamp(18px, 1.7vw, 27px); font-weight: 650; letter-spacing: -.5px; line-height: 1.25; overflow-wrap: anywhere; }
+.medicines-page .summary-icon { top: 12px; left: 14px; right: auto; width: 26px; height: 26px; border-radius: 8px; font-size: 12px; background: var(--accent-bg); color: var(--accent); }
+.medicines-page .summary-icon.green { background: #e9f5ef; color: #347a59; }
+.medicines-page .summary-icon.amber { background: #fff5dc; color: #9a741d; }
+.medicines-page .summary-icon.red { background: #fff0ed; color: #b24e42; }
+@media (max-width: 900px) { .medicines-page .summary-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } .medicines-page .summary-row strong { font-size: 24px; } }
+@media (max-width: 540px) { .medicines-page .summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .medicines-page .summary-row strong { font-size: 22px; } }

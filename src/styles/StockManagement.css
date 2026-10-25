@@ -500,3 +500,17 @@
 .inventory-page .stock-inventory-scroll thead th { position: sticky; top: 0; z-index: 2; background: var(--surface-muted, #fafbfc); box-shadow: 0 1px 0 var(--border, #edf0f4); }
 .inventory-page .stock-inventory-scroll:focus-visible { outline: 2px solid var(--accent, #4356d8); outline-offset: -2px; }
 @media print { .inventory-page .stock-inventory-scroll { max-height: none; overflow: visible; } }
+
+/* Use the same compact metric styling as Dashboard and Medicines. */
+.inventory-page > .summary-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-bottom: 22px; }
+.inventory-page > .summary-grid .summary-card { min-width: 0; min-height: 142px; padding: 16px 14px; border: 1px solid var(--border); border-radius: 13px; background: var(--surface, #fff); box-shadow: none; }
+.inventory-page > .summary-grid .summary-copy { padding-right: 0; }
+.inventory-page > .summary-grid .summary-copy p { padding-top: 34px; min-height: 66px; margin: 0; color: var(--text-muted); font-size: 11px; font-weight: 500; line-height: 1.4; }
+.inventory-page > .summary-grid .summary-row { margin-top: 4px; }
+.inventory-page > .summary-grid .summary-row strong { color: var(--text-h, #111b31); font-size: clamp(18px, 1.7vw, 27px); font-weight: 650; letter-spacing: -.5px; line-height: 1.25; overflow-wrap: anywhere; }
+.inventory-page > .summary-grid .summary-icon { top: 12px; left: 14px; right: auto; width: 26px; height: 26px; border-radius: 8px; font-size: 12px; background: var(--accent-bg); color: var(--accent); }
+.inventory-page > .summary-grid .summary-icon.green { background: #e9f5ef; color: #347a59; }
+.inventory-page > .summary-grid .summary-icon.amber { background: #fff5dc; color: #9a741d; }
+.inventory-page > .summary-grid .summary-icon.red { background: #fff0ed; color: #b24e42; }
+@media (max-width: 900px) { .inventory-page > .summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .inventory-page > .summary-grid .summary-row strong { font-size: 24px; } }
+@media (max-width: 540px) { .inventory-page > .summary-grid .summary-row strong { font-size: 22px; } }

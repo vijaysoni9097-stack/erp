@@ -28,7 +28,7 @@ export default function ReceiveStock({ onReceived, medicines = [], orderId, labe
   function selectOrder(value, list = orders) {
     const selected = list.find(item => item.id === Number(value));
     setOrder(selected || null); setCloseOrder(false); setError(''); request.current = null;
-    setDetails(Object.fromEntries((selected?.items || []).map(item => { const medicine = medicines.find(m => m.id === item.medicine_id); return [item.id, { batch_number: item.batch_number, expiry_date: medicine?.expiry_date || '', unit: medicine?.unit || 'number', purchase_price: item.unit_price, selling_price: medicine?.selling_price || '' }]; })));
+    setDetails(Object.fromEntries((selected?.items || []).map(item => { const medicine = medicines.find(m => m.id === item.medicine_id); return [item.id, { batch_number: item.batch_number, expiry_date: item.expiry_date || medicine?.expiry_date || '', unit: item.unit || medicine?.unit || 'number', purchase_price: item.unit_price, selling_price: item.selling_price ?? medicine?.selling_price ?? '' }]; })));
     setQuantities(Object.fromEntries((selected?.items || []).map(item => [item.id, String(item.remaining_quantity)])));
   }
   async function submit(event) {

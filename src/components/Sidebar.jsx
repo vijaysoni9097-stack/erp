@@ -1,6 +1,6 @@
 import { canAccessPage } from '../services/pageAccess';
 import { useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import "../styles/Sidebar.css";
 
 const navigation = [
@@ -19,7 +19,7 @@ function Sidebar({ isOpen, profile }) {
   const location = useLocation();
   const [inventoryOpen, setInventoryOpen] = useState(false);
   return <aside className={`sidebar ${isOpen ? "sidebar-open" : ""}`}>
-    <div className="sidebar-brand"><span className="brand-mark"><i /><i /><i /></span><strong>Preclinic</strong></div>
+    <Link className="sidebar-brand" to={profile?.role === "pharmacist" ? "/dispense" : "/dashboard"} aria-label="Preclinic home"><span className="brand-mark" aria-hidden="true"><i /><i /><i /></span><strong>Preclinic</strong></Link>
     <nav className="sidebar-nav">{navigation.filter((item) => (profile?.role !== "pharmacist" || (item.path && canAccessPage(profile.role, item.path))) && (!item.superadminOnly || profile?.role === "superadmin") && (!item.dispensingOnly || ["pharmacist", "admin", "superadmin"].includes(profile?.role))).map((item) => {
       const active = item.path === location.pathname;
       if (item.children) return <div key={item.label}><button type="button" className={`sidebar-button ${inventoryOpen ? "expanded" : ""}`} onClick={() => setInventoryOpen((open) => !open)}><span><i className={`fa-solid ${item.icon}`} />{item.label}</span><i className={`fa-solid fa-chevron-${inventoryOpen ? "down" : "right"} sidebar-chevron`} /></button>{inventoryOpen && <div className="submenu">{item.children.map(([label, path]) => <button type="button" key={path} onClick={() => navigate(path)}>{label}</button>)}</div>}</div>;

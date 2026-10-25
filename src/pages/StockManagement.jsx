@@ -17,6 +17,7 @@ export default function StockManagement({ profile }) {
   const [page, setPage] = useState(1);
   const [retryPage, setRetryPage] = useState(0);
   const loadMoreTarget = useRef(null);
+  const stockScroll = useRef(null);
   const requestGate = useRef(false);
   const activeQuery = useRef(null);
   const [selected, setSelected] = useState(null);
@@ -100,7 +101,7 @@ export default function StockManagement({ profile }) {
         requestGate.current = true;
         setPage(value => value + 1);
       }
-    }, {rootMargin: '0px 0px 600px 0px'});
+    }, {root: stockScroll.current, rootMargin: '0px 0px 600px 0px'});
     observer.observe(target);
     return () => observer.disconnect();
   }, [data, page, loading, error, searchTooShort, invalidExpiryRange]);
@@ -128,14 +129,14 @@ export default function StockManagement({ profile }) {
       <select aria-label="Stock filter" value={filter} onChange={e => { setFilter(e.target.value); setPage(1); }}><option value="all">All Items</option><option value="positive">With Stock</option><option value="zero">Zero Stock</option><option value="review">Needs Review</option></select>
     </div></div>
     {searchTooShort ? <p role="status">Enter at least 2 characters to search stock.</p> : invalidExpiryRange ? <p role="alert">Choose a valid expiry date range.</p> : loading && !filtered.length ? <p role="status">Loading stock…</p> : error && !filtered.length ? <p role="alert">{error} <button onClick={() => setRetryPage(value => value + 1)}>Retry</button></p> : <>
-    <div className="table-wrap"><table className="inventory-table"><thead><tr><th>Medicine</th><th>Item Code</th><th>Recorded Qty</th><th>Available Stock</th><th>Expiry Date</th><th>Last Updated</th><th>Status</th><th>Actions</th></tr></thead><tbody>
+    <div className="table-wrap stock-inventory-scroll" ref={stockScroll} role="region" aria-label="Stock inventory" tabIndex={0}><table className="inventory-table"><thead><tr><th scope="col">Medicine</th><th scope="col">Item Code</th><th scope="col">Recorded Qty</th><th scope="col">Available Stock</th><th scope="col">Expiry Date</th><th scope="col">Last Updated</th><th scope="col">Status</th><th scope="col">Actions</th></tr></thead><tbody>
     {filtered.map(r => <tr key={r.source_id}><td><strong>{r.name}</strong></td><td>{r.source_id}</td><td>{r.quantity === null ? 'No record' : r.quantity.toLocaleString()}</td><td>{r.allocated_quantity ?? 'Not imported'}</td><td>{r.expiry_date ? new Date(`${r.expiry_date}T12:00:00`).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : 'Not recorded'}</td><td>{r.source_modified_on ? new Date(r.source_modified_on).toLocaleDateString() : '—'}</td><td>{r.current_quantity === null ? 'Missing stock record' : r.current_quantity < 0 ? 'Negative — review' : r.medicine_id === null ? 'Catalog not imported' : r.current_quantity === 0 ? 'Zero Stock' : 'In Stock'}</td><td><button className="table-action" disabled={r.medicine_id == null || !Number.isSafeInteger(r.allocated_quantity)} title={r.medicine_id == null ? 'Import this item into the catalog first' : 'Adjust available stock'} onClick={() => openAdjustment(r)}>Adjust Stock</button></td></tr>)}
     {!filtered.length && <tr><td colSpan={8}>No items match your search or filter.</td></tr>}
-    </tbody></table></div>
+    </tbody></table>
     <div className="panel-head" ref={loadMoreTarget}>
       <span>{filtered.length.toLocaleString()} of {(data.total || 0).toLocaleString()} items loaded</span>
       {loading ? <span role="status">Loading more stock…</span> : error ? <span role="alert">{error} <button className="ghost-btn" onClick={() => setRetryPage(value => value + 1)}>Retry</button></span> : data.has_more ? <button className="ghost-btn" onClick={() => { if (!requestGate.current) { requestGate.current = true; setPage(value => value + 1); } }}>Load more</button> : <span>All matching items loaded</span>}
-    </div>
+    </div></div>
     </>}
     </section>
     <dialog ref={dialog} className="stock-adjust-dialog" aria-labelledby="adjust-stock-title" onCancel={event => { if (saveLock.current) event.preventDefault(); }}>

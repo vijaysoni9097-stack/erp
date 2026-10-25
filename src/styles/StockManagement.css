@@ -494,3 +494,9 @@
 .delivery-review-fields { display: grid; grid-template-columns: repeat(2, minmax(150px, 1fr)); gap: 10px; min-width: 340px; }
 .delivery-review-fields label { font-size: 12px; display: grid; gap: 5px; }
 .delivery-review-fields input { width: 100%; min-width: 0; }
+
+.inventory-page .stock-inventory-scroll { max-height: 65dvh; overflow: auto; scrollbar-gutter: stable; }
+.inventory-page .stock-inventory-scroll .inventory-table { border-collapse: separate; border-spacing: 0; }
+.inventory-page .stock-inventory-scroll thead th { position: sticky; top: 0; z-index: 2; background: var(--surface-muted, #fafbfc); box-shadow: 0 1px 0 var(--border, #edf0f4); }
+.inventory-page .stock-inventory-scroll:focus-visible { outline: 2px solid var(--accent, #4356d8); outline-offset: -2px; }
+@media print { .inventory-page .stock-inventory-scroll { max-height: none; overflow: visible; } }

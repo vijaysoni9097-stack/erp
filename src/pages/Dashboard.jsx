@@ -67,7 +67,7 @@ function Dashboard() {
   return (
     <section className="dashboard-page">
       <header className="dashboard-header">
-        <div><p className="dashboard-eyebrow">PHARMACY OVERVIEW</p><h1>Pharmacist Dashboard</h1><p className="dashboard-subtitle">Sales, stock and the items that need your attention.</p></div>
+        <div><h1>Pharmacist Dashboard</h1><p className="dashboard-subtitle">Sales, stock and the items that need your attention.</p></div>
         <div className="dashboard-buttons">
           <button type="button" className="purchase-btn" onClick={() => (window.location.href = "/purchase-orders?new=1")}>
             <i className="fa-solid fa-plus" aria-hidden="true" /> New Purchase Order
@@ -97,7 +97,7 @@ function Dashboard() {
 
       <section className="dashboard-panel dashboard-collections" aria-labelledby="collections-title">
         <div className="panel-header"><h2 id="collections-title">Today’s Collections</h2><span className="dashboard-period-note">Completed invoices · local day</span></div>
-        <div className="dashboard-collection-grid">{[['cash', 'Cash', 'fa-money-bill-wave'], ['card', 'Card', 'fa-credit-card'], ['upi', 'UPI', 'fa-mobile-screen-button']].map(([method, label, icon]) => <div className="dashboard-collection" key={method}><span className="dashboard-collection-icon"><i className={`fa-solid ${icon}`} aria-hidden="true" /></span><div><p>{label}</p><strong>{data ? formatMoney(data.todayPayments[method]) : '—'}</strong></div></div>)}</div>
+        <div className="dashboard-cards dashboard-payment-cards">{[['cash', 'Cash', 'fa-money-bill-wave'], ['card', 'Card', 'fa-credit-card'], ['upi', 'UPI', 'fa-mobile-screen-button']].map(([method, label, icon]) => <article className="dashboard-card" key={method}><div><p className="stat-label">{label}</p><div className="stat-value-row"><strong>{data ? formatMoney(data.todayPayments[method]) : '—'}</strong></div></div><span className="stat-icon blue" aria-hidden="true"><i className={`fa-solid ${icon}`} /></span><p className="stat-note">Received today</p></article>)}</div>
         {data && (data.todayPayments.bank_transfer > 0 || data.todayPayments.unrecorded > 0) && <p className="dashboard-collection-note">{data.todayPayments.bank_transfer > 0 && <span>Bank transfer: {formatMoney(data.todayPayments.bank_transfer)}. </span>}{data.todayPayments.unrecorded > 0 && <span>Invoices without recorded payment details: {formatMoney(data.todayPayments.unrecorded)}.</span>}</p>}
       </section>
 

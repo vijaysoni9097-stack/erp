@@ -275,3 +275,14 @@
   .dashboard-page .dashboard-summary-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .dashboard-page .dashboard-summary-row .stat-value-row strong { font-size: 22px; }
 }
+
+.dashboard-page .dashboard-collections { background: transparent; border: 0; box-shadow: none; }
+.dashboard-page .dashboard-collections > .panel-header { padding: 0 0 14px; border: 0; }
+.dashboard-page .dashboard-payment-cards { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-bottom: 0; }
+.dashboard-page .dashboard-payment-cards .dashboard-card { min-height: 132px; padding: 18px; }
+.dashboard-page .dashboard-payment-cards .stat-label { min-height: auto; }
+.dashboard-page .dashboard-payment-cards .stat-value-row strong { font-size: clamp(20px, 2vw, 28px); }
+.dashboard-page .dashboard-collections .dashboard-collection-note { padding: 12px 0 0; }
+@media (max-width: 540px) {
+  .dashboard-page .dashboard-payment-cards { grid-template-columns: 1fr; }
+}

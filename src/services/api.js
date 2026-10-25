@@ -21,7 +21,7 @@ export function clearSession() {
 
 const publicAuthPaths = ['/auth/login', '/auth/forgot-password', '/auth/reset-password']
 
-export const api = axios.create({ baseURL: import.meta.env.VITE_API_BASE_URL || 'https://pharmacy-erp-testing-api.onrender.com/api/v1', timeout: 10000 })
+export const api = axios.create({ baseURL: import.meta.env.DEV ? '/api/v1' : (import.meta.env.VITE_API_BASE_URL || 'https://pharmacy-erp-testing-api.onrender.com/api/v1'), timeout: 10000 })
 api.interceptors.request.use((config) => {
   const session = readSession()
   if (session && !publicAuthPaths.includes(config.url)) {

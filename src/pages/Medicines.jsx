@@ -130,11 +130,11 @@ function Medicines() {
         <div className="toolbar-actions" title="Expiring Soon counts in-stock batches expiring today through 30 days ahead; expired and zero-stock batches are excluded.">{[['all', 'All Medicines'], ['low', 'Low Stock'], ['zero', 'Zero Stock'], ['expiring', 'Expiring Soon']].map(([key, label]) => <button key={key} type="button" aria-pressed={filter === key} className={`filter-button ${filter === key ? 'active' : ''}`} onClick={() => { setFilter(key); setPage(1); }}>{label}</button>)}</div>
       </section>
       <section className="medicines-panel">
-        <div className="panel-head"><h2>Medicine Inventory</h2><span>{!loading && !error && `${filtered.length.toLocaleString()} medicines`}</span></div>
+        <div className="panel-head"><h2 id="medicine-inventory-title">Medicine Inventory</h2><span>{!loading && !error && `${filtered.length.toLocaleString()} medicines`}</span></div>
         {supplierError && <p role="status">Supplier names could not be loaded. Refresh to try again.</p>}
         {loading ? <p role="status">Loading medicines…</p> : error ? <p role="alert">{error} <button onClick={() => setReload(v => v + 1)}>Retry</button></p> : <>
-          <div className="table-wrap"><table className="medicines-table">
-            <thead><tr><th>Medicine / SKU / Batch</th><th>Generic Name</th><th>Stock / Unit</th><th>Reorder</th><th>Supplier</th><th>Expiry</th><th>Status</th></tr></thead>
+          <div className="table-wrap medicine-inventory-scroll" role="region" aria-labelledby="medicine-inventory-title" tabIndex={0}><table className="medicines-table">
+            <thead><tr><th scope="col">Medicine / SKU / Batch</th><th scope="col">Generic Name</th><th scope="col">Stock / Unit</th><th scope="col">Reorder</th><th scope="col">Supplier</th><th scope="col">Expiry</th><th scope="col">Status</th></tr></thead>
             <tbody>{visible.map(m => <tr key={m.id}>
               <td><div className="medicine-meta"><strong>{m.name}</strong><small>{m.sku} · {m.batch_number}</small></div></td>
               <td>{m.generic_name || '—'}</td><td>{m.stock_quantity} {m.unit || 'number'}</td><td>{m.reorder_level}</td><td>{supplierName(m)}</td><td>{dateLabel(m.expiry_date)}</td>

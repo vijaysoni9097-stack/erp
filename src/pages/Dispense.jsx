@@ -177,7 +177,7 @@ export default function Dispense({profile}) {
   }
 
   return <div className="dispense-page">
-    <header className="dispense-heading"><div><p className="dispense-kicker">PHARMACIST WORKSPACE</p><h1>Good care. Clear checkout.</h1><p>Welcome, {profile.first_name}. Prepare your next medicine sale.</p></div><div className="dispense-date"><i className="fa-regular fa-calendar" aria-hidden="true" />{new Date().toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'})}<span><span className="dispense-dot" /> Dispensing counter</span></div></header>
+    <header className="dispense-heading"><div><h1>Good care. Clear checkout.</h1><p>Welcome, {profile.first_name}. Prepare your next medicine sale.</p></div><div className="dispense-date"><i className="fa-regular fa-calendar" aria-hidden="true" />{new Date().toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'})}<span><span className="dispense-dot" /> Dispensing counter</span></div></header>
     <BillingDetails />
     <div className="dispense-top-summary">
       <div className="dispense-sold-summary"><TodaySales medicines={medicines} refreshKey={reload} /></div>

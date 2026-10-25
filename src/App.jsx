@@ -139,11 +139,11 @@ function App() {
             <Route path="/dispense" element={['pharmacist','admin','superadmin'].includes(profile.role) ? <Dispense profile={profile} /> : <Navigate to="/dashboard" replace />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/medicines" element={<Medicines />} />
-            <Route path="/orders" element={<Orders />} />
+            <Route path="/orders" element={<Orders profile={profile} />} />
             <Route path="/stock-management" element={<StockManagement />} />
             <Route path="/expiry-alerts" element={<ExpiryAlerts />} />
             <Route path="/suppliers" element={<Suppliers />} />
-            <Route path="/purchase-orders" element={<PurchaseOrders />} />
+            <Route path="/purchase-orders" element={<PurchaseOrders profile={profile} />} />
             <Route path="/transfers" element={<Transfers />} />
             <Route path="/machines" element={<Machines />} />
             <Route path="/messages" element={<Messages />} />

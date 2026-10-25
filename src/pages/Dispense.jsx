@@ -1,3 +1,4 @@
+import { isSellable as available } from '../services/stockSummary';
 import { useCurrency } from '../contexts/CurrencyContext';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { api } from '../services/api';
@@ -11,8 +12,6 @@ import { discountLine } from '../services/discounts';
 import { printInvoice } from '../services/printInvoice';
 import '../styles/Dispense.css';
 
-const today = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; };
-const available = medicine => medicine.stock_quantity > 0 && medicine.expiry_date >= today();
 function errorText(error) {
   const detail = error.response?.data?.detail;
   return typeof detail === 'string' ? detail : Array.isArray(detail) ? detail.map(e => e.msg).join(' ') : 'The service did not confirm this sale. Retry the same bill to check it safely.';

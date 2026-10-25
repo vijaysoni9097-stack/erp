@@ -91,3 +91,5 @@
 }
 .purchase-order-modal-header { position: sticky; top: 0; z-index: 2; background: var(--surface); }
 .purchase-order-modal-footer { position: sticky; bottom: 0; z-index: 2; box-shadow: 0 -4px 12px rgba(22,32,55,.04); }
+
+.purchase-order-workflow { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 14px; }

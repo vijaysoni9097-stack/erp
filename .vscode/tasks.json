@@ -1,0 +1,71 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "ERP: Run backend",
+      "type": "process",
+      "command": "${workspaceFolder}/backend/.venv/bin/python",
+      "windows": {
+        "command": "${workspaceFolder}\\backend\\.venv\\Scripts\\python.exe"
+      },
+      "args": [
+        "${workspaceFolder}/scripts/run_backend.py"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}",
+        "env": {
+          "DEBUG": "false"
+        }
+      },
+      "isBackground": true,
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "clear": true
+      }
+    },
+    {
+      "label": "ERP: Run frontend",
+      "type": "shell",
+      "command": "npm run dev",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "isBackground": true,
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      }
+    },
+    {
+      "label": "ERP: Run frontend and backend",
+      "dependsOn": [
+        "ERP: Run backend",
+        "ERP: Run frontend"
+      ],
+      "dependsOrder": "parallel",
+      "problemMatcher": []
+    },
+    {
+      "label": "ERP: Test backend (isolated)",
+      "type": "process",
+      "command": "${workspaceFolder}/backend/.venv/bin/python",
+      "windows": {
+        "command": "${workspaceFolder}\\backend\\.venv\\Scripts\\python.exe"
+      },
+      "args": [
+        "${workspaceFolder}/scripts/run_backend_tests.py"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      }
+    }
+  ]
+}

@@ -78,3 +78,9 @@ Both Render services are defined in the root `render.yaml`, using the `feature/u
 For Vercel, either import the repository root (root `vercel.json` uses `frontend/dist`) or choose `frontend` as the project root (its own `vercel.json` uses `dist`).
 
 Legacy `supabase/` SQL and root Python import tools are retained for reference/explicit administration; normal application deployment does not execute them. The online-only API owns normal business transactions. See [backend/ONLINE_ONLY_README.md](backend/ONLINE_ONLY_README.md).
+
+## Run from VS Code
+
+Open the repository root, install the recommended Python extensions, and configure the ignored `backend/.env` with your hosted PostgreSQL connection string. Then use **Terminal → Run Task → ERP: Run backend**, or **Run and Debug → ERP: Debug backend**. The backend uses `backend/.venv` and listens on `http://127.0.0.1:8000`; API docs are at `/docs`.
+
+There is also a combined frontend/backend task and an isolated backend test task. The local frontend continues to call Render unless you explicitly set `frontend/.env.local` to `VITE_API_BASE_URL=http://127.0.0.1:8000/api/v1`. The backend launcher requires explicit database configuration and defaults to requiring PostgreSQL.

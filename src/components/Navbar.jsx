@@ -1,9 +1,11 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "../styles/Navbar.css";
 
 const Navbar = ({ profile, onToggleSidebar, onLogout }) => {
   const navigate = useNavigate();
+  const [aiTooltipOpen, setAiTooltipOpen] = useState(false);
+  const aiTooltipId = useId();
   const fullName = [profile?.first_name, profile?.last_name].filter(Boolean).join(" ") || profile?.email || "Your profile";
   const initials = [profile?.first_name, profile?.last_name].filter(Boolean).map((name) => name.trim().charAt(0)).join("").toUpperCase() || profile?.email?.charAt(0).toUpperCase() || "?";
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
@@ -23,7 +25,10 @@ const Navbar = ({ profile, onToggleSidebar, onLogout }) => {
   return <nav className="navbar-top"><div className="navbar-content">
     <button type="button" className="navbar-toggle" onClick={onToggleSidebar} aria-label="Toggle navigation"><i className="fas fa-bars" /></button>
     <div className="navbar-actions">
-      <button type="button" className="ai-assistance-btn">AI Assistance <i className="fa-solid fa-sparkles" /></button>
+      <span className="ai-assistance-wrap" onMouseEnter={() => setAiTooltipOpen(true)} onMouseLeave={() => setAiTooltipOpen(false)}>
+        <button type="button" className="ai-assistance-btn" aria-describedby={aiTooltipOpen ? aiTooltipId : undefined} onClick={() => setAiTooltipOpen(true)} onFocus={() => setAiTooltipOpen(true)} onBlur={() => setAiTooltipOpen(false)} onKeyDown={event => { if (event.key === 'Escape') setAiTooltipOpen(false); }}>AI Assistance <i className="fa-solid fa-sparkles" aria-hidden="true" /></button>
+        {aiTooltipOpen && <span id={aiTooltipId} role="tooltip" className="ai-assistance-tooltip">This feature is not enabled yet.</span>}
+      </span>
       <button type="button" className="navbar-action-btn" onClick={() => navigate("/settings")} aria-label="Settings"><i className="fas fa-cog" /></button>
       <button type="button" className="navbar-action-btn notification-btn" aria-label="Notifications"><i className="fas fa-bell" />{notificationsEnabled && <span className="notification-badge">1</span>}</button>
       <div className="profile-menu-wrap" ref={profileMenuRef}><button type="button" className="navbar-profile" onClick={() => setProfileMenuOpen((open) => !open)} aria-label="Open profile menu" aria-expanded={profileMenuOpen}><span className="profile-avatar profile-initials" aria-hidden="true">{profile?.photo_data_url ? <img src={profile.photo_data_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : initials}</span><span className="profile-status" /></button>

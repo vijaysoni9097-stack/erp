@@ -2,3 +2,5 @@
 
 .profile-initials{overflow:hidden;display:grid;place-items:center;background:#ff6b6b;color:#fff;font-size:12px;font-weight:700}
 .profile-dropdown-user strong,.profile-dropdown-user span{overflow-wrap:anywhere}
+
+.ai-assistance-wrap{position:relative;display:inline-flex;align-items:center}.ai-assistance-tooltip{position:absolute;top:calc(100% + 10px);right:0;z-index:130;width:220px;padding:10px 12px;border:1px solid var(--border);border-radius:7px;background:var(--surface);color:var(--text);box-shadow:0 6px 20px rgba(22,32,55,.12);font-size:12px;font-weight:400;line-height:1.5}.ai-assistance-tooltip::before{content:'';position:absolute;top:-5px;right:22px;width:8px;height:8px;border-top:1px solid var(--border);border-left:1px solid var(--border);background:var(--surface);transform:rotate(45deg)}

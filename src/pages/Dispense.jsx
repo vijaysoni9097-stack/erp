@@ -1,4 +1,4 @@
-import { isSellable as available } from '../services/stockSummary';
+import { sellableMedicines, validateDispenseLine } from '../services/dispenseValidation';
 import { useCurrency } from '../contexts/CurrencyContext';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { api } from '../services/api';
@@ -128,7 +128,7 @@ export default function Dispense({profile}) {
   }, [cart.length, pending]);
 
   const stock = useMemo(() => new Map(medicines.map(m => [m.id,m])), [medicines]);
-  const sellable = useMemo(() => medicines.filter(available), [medicines]);
+  const sellable = useMemo(() => sellableMedicines(medicines), [medicines]);
   const matches = useMemo(() => {
     const term = search.trim().toLowerCase();
     return sellable.filter(m => [m.name,m.generic_name,m.sku,m.batch_number].some(v => v?.toLowerCase().includes(term)));
@@ -139,7 +139,8 @@ export default function Dispense({profile}) {
   const totalDiscount = Math.round((grossTotal-total)*100)/100;
   const tendered = paymentMethod === 'cash' ? Number(cashReceived) : total;
   const paymentValid = paymentConfirmed && (paymentMethod === 'cash' ? cashReceived !== '' && Number.isFinite(tendered) && Math.round(tendered*100)>=Math.round(total*100) : Boolean(paymentReference.trim()));
-  const invalid = cart.some(item => !discountLine(stock.get(item.id)?.selling_price||0,item.quantity,item.discount_percent) || !stock.get(item.id) || !available(stock.get(item.id)) || !Number.isInteger(item.quantity) || item.quantity < 1 || item.quantity > stock.get(item.id).stock_quantity);
+  const lineErrors = cart.map(item => ({id:item.id, name:stock.get(item.id)?.name || 'Medicine', message:validateDispenseLine(item, stock.get(item.id))})).filter(row => row.message);
+  const invalid = lineErrors.length > 0;
 
   function add(medicine) {
     if(locked) return;
@@ -220,7 +221,7 @@ export default function Dispense({profile}) {
           {paymentMethod==='cash' ? <><label className="dispense-field">Cash received<input type="number" min={total} step="0.01" required value={cashReceived} placeholder="0.00" onChange={e=>{setCashReceived(e.target.value);setPaymentConfirmed(false);}} /></label><button className="dispense-exact" type="button" disabled={!cart.length} onClick={()=>{setCashReceived(total.toFixed(2));setPaymentConfirmed(false);}}>Exact amount · {money(total)}</button><div className={`dispense-change ${cashReceived && tendered<total ? 'short' : ''}`}><span>{cashReceived && tendered<total ? 'Still to collect' : 'Change to return'}</span><strong>{money(Math.abs((cashReceived ? tendered : total)-total))}</strong></div></> : <><label className="dispense-field">{paymentMethod==='upi' ? 'UPI transaction / UTR reference' : paymentMethod==='card' ? 'Terminal transaction reference' : 'Bank transfer reference'}<input required maxLength={100} value={paymentReference} placeholder="Enter receipt reference" onChange={e=>{setPaymentReference(e.target.value);setPaymentConfirmed(false);}} /></label><p className="dispense-hint">Collect {money(total)} using your {paymentMethod==='card' ? 'card terminal' : paymentMethod==='upi' ? 'UPI app or QR code' : 'bank account'}. Enter the transaction reference, not card details or a PIN.</p></>}
           <label className="dispense-paid-confirmation"><input type="checkbox" checked={paymentConfirmed} required onChange={e=>setPaymentConfirmed(e.target.checked)} /><span>I confirm the payment has been received.</span></label>
         </fieldset>
-        {invalid && <p className="dispense-error" role="alert">Check quantities and discounts: quantities must be whole numbers within stock, and discounts must be 0–100% with up to two decimal places.</p>}
+        {invalid && <div className="dispense-error" role="alert">{lineErrors.map(row => <p key={row.id}><strong>{row.name}:</strong> {row.message}</p>)}</div>}
         {error && <p className="dispense-error" role="alert">{error}</p>}
         {pending && !busy && <p className="dispense-hint">Keep this page open and retry this bill to confirm its status without creating a duplicate.</p>}
         <button className="dispense-checkout" type="submit" disabled={busy || !paymentConfirmed || (!pending && (loading || Boolean(loadError) || !cart.length || invalid || !paymentValid || !discountReady || normalizedMobile === null))}>{busy ? 'Confirming sale…' : pending ? 'Retry / confirm this sale' : `Complete paid sale · ${money(total)}`} <i className="fa-solid fa-arrow-right" aria-hidden="true" /></button>

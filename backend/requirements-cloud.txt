@@ -1,0 +1,2 @@
+# Optional administration tools; not required by the API runtime.
+psycopg[binary]==3.3.6

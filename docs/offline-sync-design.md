@@ -1,3 +1,5 @@
+> **Historical design, retired:** The application is online-only. See [backend/ONLINE_ONLY_README.md](../backend/ONLINE_ONLY_README.md) and the [current deployment guide](deployment.md).
+
 # Offline editing with Supabase synchronization
 
 Status (October 19, 2026): the enrolled local installation uses automatic backend synchronization. Committed changes wake a background worker; it drains batches, pulls cloud updates, and retries temporary failures with backoff. Browser online/focus events also wake it. The backend must remain running. One normal online sign-in after upgrading authorizes encrypted session persistence across restarts; logout removes it. No manual Sync action is required.

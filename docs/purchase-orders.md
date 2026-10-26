@@ -23,7 +23,7 @@ After an uncertain save the form preserves and locks that request for safe retry
 Keep the page open until the save is confirmed; closing the dialog preserves the
 draft, while navigating away or reloading discards an unsaved draft.
 
-Backend files are in the separate `erp-pharmacy-backend` repository:
+Backend files are in this repository under `backend/`:
 `app/models/purchase_orders.py`, `app/schemas_purchase_orders.py`,
 `app/api/purchase_orders.py`, the API registry, and
 `tests/test_purchase_orders.py`. Startup creates the two new purchasing tables
@@ -32,7 +32,7 @@ installing these files. Orders persist locally and automatically synchronize thr
 The cloud requires migration `202610190001_automatic_business_sync.sql`.
 Creating or synchronizing an order never changes stock.
 
-Validation: `node scripts/test_purchase_orders.mjs`, `npm run build`, and the
+Validation: `npm test`, `npm run build`, and the
 backend's `test_purchase_orders.py` and `test_auth.py` suites. A browser check
 against an isolated SQLite-backed API verified creation, saved detail, exact
 amounts and persistence after reload without creating real pharmacy orders.

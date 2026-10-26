@@ -1,361 +1,80 @@
-# ERP System - Purchase Orders UI
+# Pharmacy ERP — frontend and backend
 
-A modern, responsive Purchase Orders management interface built with React and Bootstrap 5. This is a frontend UI component of the ERP system designed to handle pharmaceutical purchase order management.
+The application now lives in one repository. The React UI and FastAPI API remain independently deployable services, backed by the same configured hosted PostgreSQL database.
 
-## 🎯 Features
-
-- **Purchase Orders Dashboard** - View and manage all purchase orders
-- **Status Tracking** - Track orders with multiple status types (Pending Approval, In Transit, Delivered)
-- **Analytics Cards** - Quick metrics for pending approvals, transit orders, and spending
-- **Data Table** - Comprehensive list of purchase orders with search and filtering.
-- **Responsive Design** - Works seamlessly on desktop, tablet, and mobile devices
-- **Modern UI** - Built with Bootstrap 5 and custom styling
-
-## 📋 Prerequisites
-
-Before you begin, ensure you have the following installed:
-
-### Windows
-- **Node.js** (v20.12.0 or higher) - [Download here](https://nodejs.org/)
-- **npm** (comes with Node.js) or **yarn**
-- **Git** (optional) - [Download here](https://git-scm.com/)
-
-### Mac
-- **Node.js** (v20.12.0 or higher) - [Download here](https://nodejs.org/) or use Homebrew:
-  ```bash
-  brew install node
-  ```
-- **npm** (comes with Node.js)
-- **Git** (optional) - Pre-installed on most macOS systems, or use Homebrew:
-  ```bash
-  brew install git
-  ```
-
-To verify your installations:
-```bash
-node --version
-npm --version
-```
-
-## 🚀 Quick Start
-
-### Clone the Repository
-
-**Windows:**
-```bash
-cd Desktop
-git clone https://github.com/vijaysoni9097-stack/erp.git
-cd erp
-```
-
-**Mac:**
-```bash
-cd ~/Desktop
-git clone https://github.com/vijaysoni9097-stack/erp.git
-cd erp
-```
-
-Or if you already have the project folder:
-```bash
-cd /path/to/erp
-```
-
-### Install Dependencies
-
-Both Windows and Mac:
-```bash
-npm install
-```
-
-This will install all required packages including:
-- React
-- Vite (build tool)
-- Bootstrap 5
-- Font Awesome Icons
-
-## 🎮 Running the Development Server
-
-### Windows
-```bash
-npm run dev
-```
-
-### Mac
-```bash
-npm run dev
-```
-
-After running the command, you'll see output like:
-```
-VITE v7.3.6  ready in 301 ms
-
-  ➜  Local:   http://localhost:5173/
-  ➜  Network: use --host to expose
-  ➜  press h + enter to show help
-```
-
-**Open your browser and navigate to:** `http://localhost:5173/`
-
-The page will automatically reload when you make changes to the code (Hot Module Replacement).
-
-### Stop the Development Server
-
-Press `Ctrl + C` (Windows) or `Cmd + C` (Mac) in the terminal.
-
-## 📦 Building for Production
-
-### Windows
-```bash
-npm run build
-```
-
-### Mac
-```bash
-npm run build
-```
-
-This will create an optimized production build in the `dist/` folder.
-
-To preview the production build locally:
-```bash
-npm run preview
-```
-
-Then open `http://localhost:4173/` in your browser.
-
-## 📁 Project Structure
-
-```
+```text
 erp/
-├── src/
-│   ├── components/          # Reusable components
-│   ├── pages/
-│   │   └── PurchaseOrders.jsx   # Main purchase orders page
-│   ├── styles/
-│   │   └── PurchaseOrders.css   # Page styling
-│   ├── App.jsx              # Main app component
-│   ├── App.css              # App styling
-│   ├── main.jsx             # Entry point
-│   └── index.css            # Global styles
-├── public/                  # Static assets
-├── index.html               # HTML template
-├── vite.config.js           # Vite configuration
-├── package.json             # Project dependencies
-└── README.md                # This file
+├── frontend/              React/Vite UI, public assets, JS tests and lockfile
+├── backend/               FastAPI app, Python tests, requirements and Dockerfile
+├── scripts/               Root launchers and legacy administration utilities
+├── docs/                  Feature notes and deployment/cutover instructions
+├── supabase/              Historical SQL administration migrations
+├── .github/workflows/     Frontend checks, backend tests and Docker build
+└── render.yaml            Both Render services from this repository
 ```
 
-## 🛠 Available Scripts
+The original separate backend checkout has not been deleted or changed by this consolidation. Git provenance for its imported source is recorded in [docs/backend-import.json](docs/backend-import.json). No private environment files, databases, backups, outputs or virtual environments were imported.
 
-| Command | Description |
-|---------|-------------|
-| `npm run dev` | Start development server on http://localhost:5173 |
-| `npm run build` | Build optimized production bundle |
-| `npm run preview` | Preview production build locally |
-| `npm install` | Install project dependencies |
+## Frontend development
 
-## 🎨 Tech Stack
+Use Node **22.12+ within major version 22**.
 
-- **React 18** - UI library
-- **Vite 7** - Next-generation build tool
-- **Bootstrap 5** - CSS framework
-- **Font Awesome** - Icon library
-- **Axios** - HTTP client (ready for API integration)
-
-## 🔧 Troubleshooting
-
-### Port 5173 already in use
-
-**Windows:**
-```bash
-netstat -ano | findstr :5173
-taskkill /PID <PID> /F
+```sh
+npm ci
+npm run dev
 ```
 
-**Mac:**
-```bash
-lsof -ti:5173 | xargs kill -9
+Root `npm ci` installs the frontend dependencies too. Existing root commands `npm run build`, `npm run preview`, `npm run lint` and `npm test` continue to work. Or run `npm ci && npm run dev` directly in `frontend/`.
+
+The UI still connects to the hosted Render API by default, including local development. This uses the same accounts and data as the hosted UI. The Vite proxy handles browser origin restrictions. **Actions from a local UI can change hosted records.**
+
+Optional frontend overrides belong in `frontend/.env.local` (ignored by Git):
+
+```dotenv
+VITE_API_BASE_URL=https://pharmacy-erp-testing-api.onrender.com/api/v1
 ```
 
-Then run `npm run dev` again.
+Vite reads environment files from `frontend/`; restart it after changing them. Stop and restart any old Vite process that was started before the directory move.
 
-### Module not found errors
+## Backend development
 
-Try reinstalling dependencies:
+Use Python 3.11+. On macOS/Linux:
 
-**Windows & Mac:**
-```bash
-rm -rf node_modules package-lock.json
-npm install
+```sh
+python3 -m venv backend/.venv
+backend/.venv/bin/python -m pip install -r backend/requirements-hosting.txt
+# Create backend/.env from backend/.env.example and supply your private settings.
+npm run dev:backend
 ```
 
-### Node version issues
+On Windows create the same venv using `python -m venv backend/.venv`; its interpreter is `backend/.venv/Scripts/python.exe`. You can run `python scripts/run_backend.py` directly. The launcher uses that venv when present and starts Uvicorn from `backend/`, so backend `.env` paths continue to resolve correctly. `ERP_BACKEND_PYTHON` can select another existing interpreter.
 
-If you get Node version warnings, ensure you're using Node v20.12.0 or higher:
+The hosted application requires `DATABASE_URL`, `DATABASE_SCHEMA=erp_app`, `REQUIRE_POSTGRES=true`, and appropriate `CORS_ORIGINS`. Configure existing email/reset URLs in the same backend environment. Never put private DB or SMTP settings in a `VITE_*` variable.
 
-**Windows:**
-```bash
-node --version
-```
+To intentionally use the new local API, set `VITE_API_BASE_URL=http://127.0.0.1:8000/api/v1` in `frontend/.env.local` and restart Vite. Provision/configure its database and accounts separately. There is no background sync between a separate development DB and the hosted DB.
 
-**Mac:**
-```bash
-node --version
-```
+## Checks
 
-Update Node if needed:
-- Windows: Download from [nodejs.org](https://nodejs.org/)
-- Mac: `brew upgrade node`
-
-### Vite/Build issues
-
-Clear cache and rebuild:
-
-**Windows & Mac:**
-```bash
-rm -rf dist
+```sh
+npm test
 npm run build
+npm run test:backend
 ```
 
-## 📝 Development Tips
+The backend test launcher runs in an isolated temporary directory and database, with no developer `.env` loaded. CI uses the same launcher. A frontend lint command is retained; it requires the native oxlint dependency installed for your machine.
 
-### Adding New Pages
+## Build and deploy
 
-1. Create a new file in `src/pages/`
-2. Import it in `src/App.jsx`
-3. Update routing as needed
-
-### Adding New Components
-
-1. Create a new file in `src/components/`
-2. Export as default or named export
-3. Import and use in pages
-
-### Customizing Styles
-
-- Global styles: Edit `src/index.css`
-- Page-specific styles: Edit `src/pages/PurchaseOrders.css`
-- Bootstrap variables can be customized in CSS
-
-## 🚀 Deployment
-
-### Deploy to GitHub Pages
-
-```bash
-npm run build
-git add dist/
-git commit -m "Build for production"
-git push origin main
+```sh
+docker build -t pharmacy-erp-api backend
 ```
 
-### Deploy to Netlify
+The Docker image requires a PostgreSQL URL at runtime; it no longer silently creates a SQLite deployment. It runs as a non-root user. Docker context `backend/` excludes private files by an allowlist.
 
-1. Push code to GitHub
-2. Connect repository to Netlify
-3. Set build command: `npm run build`
-4. Set publish directory: `dist`
+Both Render services are defined in the root `render.yaml`, using the `feature/ui_0.2` branch of `vijaysoni9097-stack/erp`. API: root `backend`, Dockerfile `./Dockerfile`, context `.`. UI: root `frontend`, build `npm ci && npm run build`, publish `dist`. Build filters isolate frontend/backend deployments. Existing service URLs can stay unchanged.
 
-### Deploy to Vercel
+**Changing files locally does not update existing Render service settings.** After committing/pushing, follow the [deployment and one-time cutover guide](docs/deployment.md) to repoint the existing API service from the old repository and set both root directories. Keep all existing Render environment secrets and the current database/schema. Do not create a replacement DB or delete an existing service.
 
-```bash
-npm install -g vercel
-vercel
-```
+For Vercel, either import the repository root (root `vercel.json` uses `frontend/dist`) or choose `frontend` as the project root (its own `vercel.json` uses `dist`).
 
-## 🤝 Git Workflow
-
-### First Time Push
-
-**Windows:**
-```bash
-cd erp
-git config --global user.email "your-email@example.com"
-git config --global user.name "Your Name"
-git remote set-url origin git@github.com:vijaysoni9097-stack/erp.git
-git push -u origin main
-```
-
-**Mac:**
-```bash
-cd ~/Desktop/erp
-git config --global user.email "your-email@example.com"
-git config --global user.name "Your Name"
-git remote set-url origin git@github.com:vijaysoni9097-stack/erp.git
-git push -u origin main
-```
-
-**Note:** Make sure your SSH key is added to GitHub (see GitHub SSH setup docs)
-
-### Regular Commits
-
-```bash
-git add .
-git commit -m "Your commit message"
-git push origin main
-```
-
-## 📖 Resources
-
-- [React Documentation](https://react.dev/)
-- [Vite Guide](https://vite.dev/)
-- [Bootstrap 5 Documentation](https://getbootstrap.com/docs/5.0/)
-- [Font Awesome Icons](https://fontawesome.com/icons)
-
-## 🐛 Known Issues
-
-- Node v20.12.0 may show version warnings with Vite 7 (runs fine)
-- Older versions of npm may have optional dependency issues (fixed with `npm install`)
-
-## 📄 License
-
-This project is part of the ERP system. All rights reserved.
-
-## ✉️ Support
-
-For issues or questions:
-1. Check the troubleshooting section
-2. Review error messages carefully
-3. Clear cache: `npm cache clean --force`
-4. Reinstall: `npm install`
-
----
-
-**Last Updated:** September 2026
-**Version:** 1.0.0
-
-## Local pharmacy login
-
-Run the FastAPI backend on `127.0.0.1:8000`, then run `npm run dev`. Vite forwards `/api` requests to the local backend; no cloud connection is required. Sign in with the email/password configured in the backend (`python -m app.setup_local --email your@email.com` for a new installation). Demo credentials are no longer accepted.
-
-The UI validates stored sessions through `/auth/me` on reload, attaches bearer tokens to requests through `src/services/api.js`, and revokes the session through `/auth/logout`. Tokens expire after 12 hours; a 401 redirects the UI to sign in. Backend connection failures show a retry message. Only token and expiry are saved locally, never passwords.
-
-For a deployed build, configure the web server to proxy `/api` to the backend on the same origin. All future pharmacy API calls should use the shared `api` client. Business pages still contain their existing demo data; this change integrates authentication only.
-
-## Password recovery
-
-The sign-in page links to `/forgot-password`, which calls `POST /api/v1/auth/forgot-password`.
-Email links open `/reset-password?token=…`; the form submits the token, new password,
-and confirmation to `POST /api/v1/auth/reset-password`. Passwords must match and contain
-12–128 characters. After success, local credentials are cleared and the user signs in again.
-The backend expires links after 15 minutes, accepts each once, and revokes existing sessions.
-
-In the backend `.env`, configure `SMTP_HOST`, `SMTP_PORT`, `SMTP_USERNAME`,
-`SMTP_PASSWORD`, `SMTP_FROM_EMAIL`, and `PASSWORD_RESET_URL=http://localhost:5173/reset-password`
-(use your actual frontend origin/port). Restart the backend after configuration. SMTP uses
-STARTTLS by default; use `SMTP_STARTTLS=false` only for a trusted local test relay.
-Use HTTPS for the deployed reset URL, proxy `/api` to the backend, and serve frontend routes
-through `index.html`. The app sets a no-referrer policy for reset links. Email recovery requires
-a reachable mail service; ordinary local sign-in still works offline.
-
-## Superadmin user management
-
-Superadmins see **User Management** in the sidebar (`/users`). They can create an
-employee with a role and initial password, delete non-superadmin accounts after
-confirmation, and reset another employee's password. Passwords require 12–128
-characters. Resetting or deleting a user revokes their sessions and recovery links.
-Superadmin accounts cannot be deleted; use Settings → Change Password for your own
-password. Other roles cannot access the page or its APIs (the backend returns 403).
-
-Backend endpoints: `GET/POST /api/v1/users`, `DELETE /api/v1/users/{id}`, and
-`POST /api/v1/users/{id}/reset-password`. Restart the backend after installing the
-API changes. The designated local superadmin is `pharmacist@example.com`; its
-password is stored only as a hash in the backend database, not in this repository.
+Legacy `supabase/` SQL and root Python import tools are retained for reference/explicit administration; normal application deployment does not execute them. The online-only API owns normal business transactions. See [backend/ONLINE_ONLY_README.md](backend/ONLINE_ONLY_README.md).

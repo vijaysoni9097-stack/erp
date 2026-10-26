@@ -32,3 +32,21 @@ __pycache__/
 .env.*
 !.env.example
 .vercel/
+
+# Backend runtime artifacts and secrets (including nested folders)
+.venv/
+.pytest_cache/
+.ruff_cache/
+*.db
+*.db-wal
+*.db-shm
+*.sqlite
+*.sqlite3
+backend/backups/
+backend/outputs/
+backend/.coverage
+!**/.env.example
+!**/.env.staging.example
+
+# Vite metadata
+.vite/

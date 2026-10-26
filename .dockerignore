@@ -1,0 +1,13 @@
+.git
+**/node_modules
+**/dist
+**/.venv
+**/__pycache__
+**/.pytest_cache
+**/.env
+**/.env.*
+**/*.db
+**/*.db-wal
+**/*.db-shm
+backend/backups
+backend/outputs

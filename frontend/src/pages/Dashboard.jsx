@@ -4,6 +4,7 @@ import { useCurrency } from '../contexts/CurrencyContext';
 import { useEffect, useMemo, useState } from "react";
 import { api } from "../services/api";
 import { dayKey } from '../services/dailySales';
+import { refreshDashboard } from '../services/dashboardRefresh';
 import { dashboardData, salesTrendForDates } from "../services/dashboardData";
 import "../styles/dashboard.css";
 import {
@@ -30,6 +31,7 @@ function Dashboard() {
   const [records, setRecords] = useState(null);
   const [error, setError] = useState('');
   const [updated, setUpdated] = useState(null);
+  const [refreshKey,setRefreshKey] = useState(0);
   useEffect(() => {
     const controller = new AbortController();
     let active = false;
@@ -37,14 +39,10 @@ function Dashboard() {
       if (active) return;
       active = true;
       try {
-        const names = ['medicines','sales','purchase-orders','prescriptions','customers','suppliers'];
-        const responses = await Promise.all(names.map(name => api.get(`/${name}`, { signal:controller.signal, timeout:90000 })));
-        if (controller.signal.aborted) return;
-        if (responses.some(r => !Array.isArray(r.data))) throw new Error('Invalid dashboard data');
-        const start=new Date();start.setHours(0,0,0,0);const end=new Date(start);end.setDate(end.getDate()+1);
-        const credit=await api.get('/credits/summary',{signal:controller.signal,params:{from_at:start.toISOString(),to_at:end.toISOString()}});
-        setRecords({...Object.fromEntries(['medicines','sales','orders','prescriptions','customers','suppliers'].map((key,i)=>[key,responses[i].data])),creditCollections:credit.data.collections});
-        setUpdated(new Date()); setError('');
+        const warning=await refreshDashboard(api,controller.signal,records=>{
+          setRecords(records);setUpdated(new Date());setError('');
+        });
+        if(!controller.signal.aborted)setError(warning || '');
       } catch { if (!controller.signal.aborted) setError('Dashboard could not refresh. Displayed figures may be out of date.'); }
       finally { active = false; }
     };
@@ -52,7 +50,7 @@ function Dashboard() {
     const timer = setInterval(refresh,30000);
     ['focus','erp:data-saved'].forEach(event=>window.addEventListener(event,refresh));
     return () => { controller.abort(); clearInterval(timer); ['focus','erp:data-saved'].forEach(event=>window.removeEventListener(event,refresh)); };
-  }, []);
+  }, [refreshKey]);
   const data = useMemo(()=>records ? dashboardData(records) : null,[records]);
   const { salesByPeriod, stockByCategory, recentPrescriptions, expiryAlerts, lowStockMedicines, topSellingMedicines, supplierRows: suppliers } = data || {salesByPeriod:{},stockByCategory:[],recentPrescriptions:[],expiryAlerts:[],lowStockMedicines:[],topSellingMedicines:[],supplierRows:[]};
   const summaryCards = data ? [
@@ -82,7 +80,7 @@ function Dashboard() {
         </div>
       </header>
 
-      <div className={`dashboard-update ${error ? 'has-error' : ''}`} role="status"><span className="dashboard-update-dot" /><span>{error || (updated ? `Updated ${updated.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'})} · Refreshes automatically` : 'Loading pharmacy data…')}</span></div>
+      <div className={`dashboard-update ${error ? 'has-error' : ''}`} role="status"><span className="dashboard-update-dot" /><span>{error || (updated ? `Updated ${updated.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'})} · Refreshes automatically` : 'Loading pharmacy data…')}</span>{error&&<button type="button" className="stock-btn" onClick={()=>setRefreshKey(value=>value+1)}>Retry refresh</button>}</div>
       <div className="dashboard-cards dashboard-summary-row">
         {summaryCards.map((card) => (
           <article className={`dashboard-card ${card.label === 'Today’s Sales' ? 'dashboard-card-sales' : ''}`} key={card.label}>
@@ -102,8 +100,9 @@ function Dashboard() {
       <CreditAccounts refreshKey={updated?.getTime()} />
       <section className="dashboard-panel dashboard-collections" aria-labelledby="collections-title">
         <div className="panel-header"><h2 id="collections-title">Today’s Collections</h2><span className="dashboard-period-note">Completed invoices · local day</span></div>
-        <div className="dashboard-cards dashboard-payment-cards">{[['cash', 'Cash', 'fa-money-bill-wave'], ['card', 'Card', 'fa-credit-card'], ['upi', 'UPI', 'fa-mobile-screen-button']].map(([method, label, icon]) => <article className="dashboard-card" key={method}><div><p className="stat-label">{label}</p><div className="stat-value-row"><strong>{data ? formatMoney(data.todayPayments[method]) : '—'}</strong></div></div><span className="stat-icon blue" aria-hidden="true"><i className={`fa-solid ${icon}`} /></span><p className="stat-note">Received today</p></article>)}</div>
-        {data && (data.todayPayments.bank_transfer > 0 || data.todayPayments.unrecorded > 0) && <p className="dashboard-collection-note">{data.todayPayments.bank_transfer > 0 && <span>Bank transfer: {formatMoney(data.todayPayments.bank_transfer)}. </span>}{data.todayPayments.unrecorded > 0 && <span>Invoices without recorded payment details: {formatMoney(data.todayPayments.unrecorded)}.</span>}</p>}
+        <div className="dashboard-cards dashboard-payment-cards">{[['cash', 'Cash', 'fa-money-bill-wave'], ['card', 'Card', 'fa-credit-card'], ['upi', 'UPI', 'fa-mobile-screen-button']].map(([method, label, icon]) => <article className="dashboard-card" key={method}><div><p className="stat-label">{label}</p><div className="stat-value-row"><strong>{data && records.creditCollectionsAvailable ? formatMoney(data.todayPayments[method]) : '—'}</strong></div></div><span className="stat-icon blue" aria-hidden="true"><i className={`fa-solid ${icon}`} /></span><p className="stat-note">Received today</p></article>)}</div>
+        {records && !records.creditCollectionsAvailable && <p className="dashboard-collection-note" role="status">{records.creditCollectionsPending?'Refreshing credit repayment collections…':'Collection totals are unavailable until credit repayments refresh. Sales and stock figures are displayed above.'}</p>}
+        {data && records.creditCollectionsAvailable && (data.todayPayments.bank_transfer > 0 || data.todayPayments.unrecorded > 0) && <p className="dashboard-collection-note">{data.todayPayments.bank_transfer > 0 && <span>Bank transfer: {formatMoney(data.todayPayments.bank_transfer)}. </span>}{data.todayPayments.unrecorded > 0 && <span>Invoices without recorded payment details: {formatMoney(data.todayPayments.unrecorded)}.</span>}</p>}
       </section>
 
       <div className="dashboard-chart-grid">

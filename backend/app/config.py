@@ -11,6 +11,8 @@ class Settings(BaseSettings):
     debug: bool = True
     database_schema: str = Field(default="erp_app", pattern=r"^[a-z][a-z0-9_]{0,62}$")
     require_postgres: bool = False
+    db_pool_size: int = Field(default=2, ge=1, le=5)
+    db_pool_timeout: int = Field(default=30, ge=1, le=90)
     cors_origins: list[str] = []
     database_url: str = "sqlite:///./temp.db"
     smtp_host: str | None = None

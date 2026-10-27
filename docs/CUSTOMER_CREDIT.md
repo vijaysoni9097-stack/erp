@@ -50,3 +50,12 @@ Primary API reference: https://www.postman.com/meta/whatsapp-business-platform/d
 ## Verification
 
 `npm test`, `npm run test:backend`, and `npm run build` verify the frontend calculations/printing and isolated HTTP tests for required phone/acknowledgment, partial/full credit, stock deductions, duplicate requests, later repayments, overpayment prevention, role checks, shared mobiles, collection date ranges, and mocked WhatsApp acceptance/timeouts. Backend tests use a disposable SQLite database and never the hosted pharmacy database.
+
+## Shared database connection budget
+
+The API defaults to two PostgreSQL connections per process and no overflow, using
+`DB_POOL_SIZE=2` and `DB_POOL_TIMEOUT=30`. Include local APIs, OPD, admin tools and
+both old/new instances during deployment when calculating the provider's session
+connection budget. Increasing worker counts also multiplies these pools. The
+previous SQLAlchemy defaults permitted 15 connections per process, exhausting the
+Supabase session-mode limit when local and hosted services ran together.

@@ -16,7 +16,12 @@ if settings.require_postgres and not is_postgres:
 connect_args = {"check_same_thread": False} if database_url.get_backend_name() == 'sqlite' else {}
 if is_postgres:
     connect_args.update(options=f'-csearch_path={settings.database_schema}', prepare_threshold=None)
-engine = create_engine(database_url, connect_args=connect_args, pool_pre_ping=True)
+# Supabase session-mode clients are shared by local, Render and rolling deploys.
+# Bound each API process instead of SQLAlchemy's default 5 + 10 overflow clients.
+pool_options = dict(pool_size=settings.db_pool_size, max_overflow=0,
+                    pool_timeout=settings.db_pool_timeout, pool_recycle=180,
+                    pool_use_lifo=True) if is_postgres else {}
+engine = create_engine(database_url, connect_args=connect_args, pool_pre_ping=True, **pool_options)
 
 if is_postgres:
     @event.listens_for(engine, "connect")

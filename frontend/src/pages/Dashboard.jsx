@@ -1,3 +1,5 @@
+import CreditAccounts from '../components/CreditAccounts';
+import '../styles/TodaySales.css';
 import { useCurrency } from '../contexts/CurrencyContext';
 import { useEffect, useMemo, useState } from "react";
 import { api } from "../services/api";
@@ -39,7 +41,9 @@ function Dashboard() {
         const responses = await Promise.all(names.map(name => api.get(`/${name}`, { signal:controller.signal, timeout:90000 })));
         if (controller.signal.aborted) return;
         if (responses.some(r => !Array.isArray(r.data))) throw new Error('Invalid dashboard data');
-        setRecords(Object.fromEntries(['medicines','sales','orders','prescriptions','customers','suppliers'].map((key,i)=>[key,responses[i].data])));
+        const start=new Date();start.setHours(0,0,0,0);const end=new Date(start);end.setDate(end.getDate()+1);
+        const credit=await api.get('/credits/summary',{signal:controller.signal,params:{from_at:start.toISOString(),to_at:end.toISOString()}});
+        setRecords({...Object.fromEntries(['medicines','sales','orders','prescriptions','customers','suppliers'].map((key,i)=>[key,responses[i].data])),creditCollections:credit.data.collections});
         setUpdated(new Date()); setError('');
       } catch { if (!controller.signal.aborted) setError('Dashboard could not refresh. Displayed figures may be out of date.'); }
       finally { active = false; }
@@ -95,6 +99,7 @@ function Dashboard() {
         ))}
       </div>
 
+      <CreditAccounts refreshKey={updated?.getTime()} />
       <section className="dashboard-panel dashboard-collections" aria-labelledby="collections-title">
         <div className="panel-header"><h2 id="collections-title">Today’s Collections</h2><span className="dashboard-period-note">Completed invoices · local day</span></div>
         <div className="dashboard-cards dashboard-payment-cards">{[['cash', 'Cash', 'fa-money-bill-wave'], ['card', 'Card', 'fa-credit-card'], ['upi', 'UPI', 'fa-mobile-screen-button']].map(([method, label, icon]) => <article className="dashboard-card" key={method}><div><p className="stat-label">{label}</p><div className="stat-value-row"><strong>{data ? formatMoney(data.todayPayments[method]) : '—'}</strong></div></div><span className="stat-icon blue" aria-hidden="true"><i className={`fa-solid ${icon}`} /></span><p className="stat-note">Received today</p></article>)}</div>

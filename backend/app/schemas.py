@@ -95,9 +95,9 @@ class PaymentCreate(BaseModel):
 
     @model_validator(mode='after')
     def validate_payment(self):
-        if not self.confirmed:
+        if self.tendered > 0 and not self.confirmed:
             raise ValueError('Confirm payment received before completing the sale')
-        if self.method != 'cash' and not self.reference:
+        if self.tendered > 0 and self.method != 'cash' and not self.reference:
             raise ValueError('Enter the payment transaction reference')
         if self.method == 'cash' and self.reference:
             raise ValueError('Cash payments do not need a transaction reference')
@@ -116,6 +116,8 @@ class CheckoutCreate(SaleCreate):
     model_config = ConfigDict(extra='forbid', str_strip_whitespace=True)
     request_id: UUID
     payment: PaymentCreate
+    credit_acknowledged: bool = False
+    whatsapp_consent: bool = False
     patient_name: str = Field(min_length=2, max_length=150)
     customer_mobile: str | None = Field(default=None, max_length=40)
     prescribed_by: str = Field(default='self', min_length=2, max_length=150)
@@ -154,6 +156,9 @@ class CompanySnapshotRead(ORMModel):
 
 
 class SaleRead(ORMModel):
+    outstanding_amount: Decimal = Decimal('0')
+    paid_amount: Decimal | None = None
+    whatsapp_status: str | None = None
     patient_name: str | None = None
     customer_mobile: str | None = None
     prescribed_by: str | None = None

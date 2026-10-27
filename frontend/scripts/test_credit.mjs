@@ -1,0 +1,23 @@
+import assert from 'node:assert/strict';
+import {checkoutPayment} from '../src/services/creditPayment.js';
+import {dashboardData} from '../src/services/dashboardData.js';
+import {populateInvoice} from '../src/services/printInvoice.js';
+const base={mode:'paid',method:'cash',received:'100',total:100,confirmed:true,reference:'',phone:null};
+assert.equal(checkoutPayment(base).valid,true);
+assert.equal(checkoutPayment({...base,confirmed:false}).valid,false);
+assert.equal(checkoutPayment({...base,received:'30'}).valid,false);
+assert.equal(checkoutPayment({...base,mode:'partial',received:'30'}).valid,false);
+const partial=checkoutPayment({...base,mode:'partial',received:'30',phone:'+919876543210'});
+assert.deepEqual(partial,{tendered:30,outstanding:70,valid:true});
+assert.equal(checkoutPayment({...base,mode:'credit',received:'',confirmed:false,phone:'+919876543210'}).valid,true);
+for(const received of ['0','100','100.01','1.001','-1','abc'])assert.equal(checkoutPayment({...base,mode:'partial',received,phone:'+919876543210'}).valid,false);
+assert.equal(checkoutPayment({...base,method:'upi',mode:'partial',received:'20',phone:'+919876543210'}).valid,false);
+assert.equal(checkoutPayment({...base,method:'upi',mode:'partial',received:'20',reference:'UTR-1',phone:'+919876543210'}).valid,true);
+const now=new Date('2026-10-27T12:00:00Z');
+const data=dashboardData({medicines:[],sales:[{id:1,status:'completed',created_at:now.toISOString(),total_amount:100,payment:{method:'cash',amount:20},items:[]}],orders:[],prescriptions:[],customers:[],suppliers:[],creditCollections:{cash:30,upi:10}},now);
+assert.equal(data.todaySales,100);assert.equal(data.todayPayments.cash,50);assert.equal(data.todayPayments.upi,10);
+class Element {constructor(){this.textContent='';this.children=[];}appendChild(e){this.children.push(e);}get text(){return [this.textContent,...this.children.map(c=>c.text)].join(' ');}}
+const doc={head:new Element(),body:new Element(),createElement:()=>new Element()};
+populateInvoice(doc,{id:1,created_at:now.toISOString(),items:[],subtotal:100,tax_amount:0,total_amount:100,paid_amount:30,outstanding_amount:70,payment:{method:'cash',amount:20,tendered:20,change:0}},[],v=>`INR ${v}`);
+assert.ok(doc.body.text.includes('Paid to date INR 30'));assert.ok(doc.body.text.includes('Outstanding credit INR 70'));
+console.log('Credit checks passed: full/partial payment validation, confirmation, phone, collection totals, invoice balances.');

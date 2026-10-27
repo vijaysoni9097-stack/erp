@@ -18,8 +18,9 @@
 
 .dispense-bill .dispense-daily-discount{margin-top:18px;padding:16px;border:1px solid var(--accent-border);border-radius:12px;background:var(--accent-bg)}.dispense-daily-discount legend{float:none;width:auto;font-size:13px;font-weight:650;padding:0 6px;margin:0}.dispense-daily-discount p{font-size:10px;line-height:1.6;color:var(--text-muted);margin:8px 0}.dispense-default-discount-row{display:flex;align-items:flex-end;gap:10px;margin:12px 0}.dispense-default-discount-row label,.dispense-customer-discount{display:block;flex:1;min-width:0;font-size:11px;font-weight:600;color:var(--text)}.dispense-daily-discount input{display:block;box-sizing:border-box;width:100%;min-width:0;margin-top:6px;padding:9px;border:1px solid var(--border);border-radius:7px;background:var(--surface,#fff);color:var(--text);font-size:12px}.dispense-default-discount-row button{border:0;border-radius:7px;padding:10px;background:var(--accent);color:#fff;font-size:11px;white-space:nowrap}.dispense-customer-discount span{font-size:10px;color:var(--text-muted);font-weight:400}.dispense-daily-discount .dispense-discount-required{color:#946b15}
 
-/* Keep daily sales and discount controls together above the working counter. */
-.dispense-top-summary{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.35fr);gap:18px;margin-bottom:24px;align-items:stretch}
+/* Keep credit, sales and discount controls aligned above the working counter. */
+.dispense-top-summary{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1.65fr);gap:18px;margin-bottom:24px;align-items:stretch}
+.dispense-top-summary>.credit-summary{min-width:0;margin:0;display:flex;flex-direction:column}.dispense-top-summary>.credit-summary>.credit-trigger{flex:1}.dispense-top-summary>.credit-summary>p{margin:8px 0 0;font-size:11px;color:var(--text-muted)}
 .dispense-sold-summary{min-width:0}.dispense-top-summary .today-sales-trigger{height:100%;box-sizing:border-box;margin:0;padding:18px;flex-wrap:wrap;gap:12px}
 .dispense-top-summary .today-sales-caption{flex-basis:100%;margin-left:58px;font-size:11px}
 .dispense-page .dispense-discount-summary{min-width:0;margin:0;padding:16px 18px;border:1px solid var(--border);border-radius:12px;background:var(--surface,#fff)}
@@ -29,7 +30,10 @@
 .dispense-discount-fields label span{font-weight:400;font-size:9px}.dispense-discount-fields input{margin-top:5px;padding:8px;min-height:34px}
 .dispense-discount-fields button{flex-shrink:0;min-height:34px;padding:8px 10px;border:0;border-radius:7px;background:var(--accent);color:#fff;font-size:11px;white-space:nowrap}
 .dispense-discount-summary .dispense-discount-caption,.dispense-discount-summary .dispense-discount-status{font-size:10px;margin:8px 0 0;line-height:1.4}.dispense-discount-summary .dispense-discount-status{color:var(--accent)}
-@media(max-width:1000px){.dispense-top-summary{grid-template-columns:1fr}.dispense-top-summary .today-sales-caption{flex-basis:auto;margin-left:auto}}
+@media(max-width:1100px){.dispense-top-summary{grid-template-columns:repeat(2,minmax(0,1fr))}.dispense-top-summary>.dispense-discount-summary{grid-column:1 / -1}}
+@media(max-width:600px){.dispense-top-summary{grid-template-columns:1fr}.dispense-top-summary .today-sales-caption{flex-basis:100%;margin-left:58px}}
 @media(max-width:480px){.dispense-discount-fields{flex-wrap:wrap}.dispense-discount-fields label{min-width:100px}.dispense-discount-fields label:last-child{flex-basis:100%}.dispense-discount-heading small{flex-basis:100%}}
 
 .dispense-field>small{font-size:10px;font-weight:400;color:var(--text-muted);margin-left:5px}.dispense-customer-matches{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 14px}.dispense-customer-matches button{font-size:11px;background:var(--accent-bg);color:var(--accent);border:1px solid var(--accent-border);border-radius:7px;padding:7px 10px}
+
+.dispense-checkout-help{padding:12px;margin:14px 0;border:1px solid var(--accent-border);border-radius:10px;background:var(--accent-bg);font-size:12px;line-height:1.5}.dispense-checkout-help p{margin:0 0 8px}.dispense-checkout-help button{border:1px solid var(--accent-border);border-radius:7px;background:var(--surface);color:var(--accent);padding:8px 10px;font-size:12px;font-weight:600}.dispense-checkout-help small{display:block;margin-top:8px;color:var(--text-muted);font-size:10px}

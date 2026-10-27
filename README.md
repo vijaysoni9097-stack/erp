@@ -84,3 +84,5 @@ Legacy `supabase/` SQL and root Python import tools are retained for reference/e
 Open the repository root, install the recommended Python extensions, and configure the ignored `backend/.env` with your hosted PostgreSQL connection string. Then use **Terminal → Run Task → ERP: Run backend**, or **Run and Debug → ERP: Debug backend**. The backend uses `backend/.venv` and listens on `http://127.0.0.1:8000`; API docs are at `/docs`.
 
 There is also a combined frontend/backend task and an isolated backend test task. The local frontend continues to call Render unless you explicitly set `frontend/.env.local` to `VITE_API_BASE_URL=http://127.0.0.1:8000/api/v1`. The backend launcher requires explicit database configuration and defaults to requiring PostgreSQL.
+
+Customer credit, partial payments, repayment tracking and WhatsApp setup: [Customer credit guide](docs/CUSTOMER_CREDIT.md).

@@ -3,7 +3,7 @@ from hashlib import sha256
 from decimal import Decimal, ROUND_HALF_UP
 
 from fastapi import Depends, HTTPException, status
-from sqlalchemy import select
+from sqlalchemy import select, func
 from sqlalchemy.orm import Session, selectinload, joinedload
 
 from app.api.base import BaseAPI, RouteDefinition
@@ -21,6 +21,7 @@ from app.models import (
 )
 from app.schemas import SaleCreate, SaleRead, CheckoutCreate
 from app.models.sales import CheckoutReceipt, SalePayment
+from app.models.credit import SaleCredit, CreditNotification
 from app.models.sync import SyncIdentity
 from app.models import PharmacistProfile
 from app.services.auth import get_current_profile
@@ -28,7 +29,7 @@ from app.services.auth import get_current_profile
 
 def invoice_load_options():
     # Batch related invoice data instead of querying separately for each sale/line.
-    return (joinedload(Sale.payment), joinedload(Sale.company_record),
+    return (joinedload(Sale.credit).joinedload(SaleCredit.notification), joinedload(Sale.payment), joinedload(Sale.company_record),
             joinedload(Sale.customer), joinedload(Sale.prescription),
             selectinload(Sale.items).options(joinedload(SaleItem.discount_record),joinedload(SaleItem.medicine)))
 
@@ -84,6 +85,9 @@ class SaleAPI(BaseAPI):
         if isinstance(payload, CheckoutCreate):
             exclusions = {} if payload.customer_mobile else {'customer_mobile': True}
             if all(not item.discount_percent for item in payload.items): exclusions['items'] = {'__all__': {'discount_percent'}}
+            # Preserve hashes of pre-credit checkout requests.
+            if not payload.credit_acknowledged: exclusions['credit_acknowledged'] = True
+            if not payload.whatsapp_consent: exclusions['whatsapp_consent'] = True
             receipt_json = payload.model_dump_json(exclude=exclusions)
             receipt_hash = sha256(receipt_json.encode()).hexdigest()
             receipt = db.get(CheckoutReceipt, str(payload.request_id))
@@ -116,8 +120,11 @@ class SaleAPI(BaseAPI):
         subtotal = sum((line_totals[item.medicine_id] for item in payload.items), Decimal("0"))
         if isinstance(payload, CheckoutCreate):
             payment = payload.payment
-            if payment.tendered < subtotal or (payment.method != 'cash' and payment.tendered != subtotal):
-                raise HTTPException(422, 'Payment must cover the current bill total; digital payments must match it exactly')
+            if payment.tendered < subtotal:
+                if not payload.credit_acknowledged or not payload.customer_mobile:
+                    raise HTTPException(422, 'A valid customer mobile and credit acknowledgment are required for unpaid amounts')
+            elif payment.method != 'cash' and payment.tendered != subtotal:
+                raise HTTPException(422, 'Digital payment cannot exceed the bill total')
         customer_id = payload.customer_id
         if isinstance(payload, CheckoutCreate):
             from app.services.customer_mobile import customers_by_mobile
@@ -154,9 +161,19 @@ class SaleAPI(BaseAPI):
         if prescription:
             prescription.status = PrescriptionStatus.dispensed
         if isinstance(payload, CheckoutCreate):
-            sale.payment = SalePayment(method=payload.payment.method, amount=sale.total_amount,
-                tendered=payload.payment.tendered, change=payload.payment.tendered-sale.total_amount,
+            sale.payment = SalePayment(method=payload.payment.method, amount=min(payload.payment.tendered, sale.total_amount),
+                tendered=payload.payment.tendered, change=max(Decimal(0), payload.payment.tendered-sale.total_amount),
                 reference=payload.payment.reference)
+            owed = max(Decimal(0), sale.total_amount - payload.payment.tendered)
+            if owed:
+                import json
+                previous = db.scalar(select(func.coalesce(func.sum(SaleCredit.outstanding), 0)).where(SaleCredit.phone == payload.customer_mobile))
+                credit = SaleCredit(sale_id=sale.id, phone=payload.customer_mobile, customer_name=payload.patient_name,
+                                    principal=owed, outstanding=owed, actor_id=db.info['actor_id'])
+                from app.services.whatsapp import configured
+                credit.notification = CreditNotification(status=('queued' if configured() else 'not_configured') if payload.whatsapp_consent else 'no_consent',
+                    parameters=json.dumps([payload.patient_name, f'INV-{sale.id:06d}', str(owed), str(previous + owed)]))
+                sale.credit = credit
         if receipt_hash:
             db.add(CheckoutReceipt(request_id=str(payload.request_id), actor_id=db.info['actor_id'],
                                    payload_hash=receipt_hash, sale_id=sale.id))

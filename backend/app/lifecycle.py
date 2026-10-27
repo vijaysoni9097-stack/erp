@@ -20,4 +20,14 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
     migrate_medicine_unit(engine)
     with SessionLocal() as db:
         seed_settings(db)
-    yield
+    import asyncio
+    from app.services.whatsapp import worker
+    task = asyncio.create_task(worker())
+    try:
+        yield
+    finally:
+        task.cancel()
+        try:
+            await task
+        except asyncio.CancelledError:
+            pass

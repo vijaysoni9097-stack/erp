@@ -30,6 +30,20 @@ class Sale(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(), server_default=func.now())
     company_record: Mapped["SaleCompany | None"] = relationship("SaleCompany", uselist=False, cascade="all, delete-orphan")
 
+    credit: Mapped["SaleCredit | None"] = relationship(uselist=False)
+
+    @property
+    def outstanding_amount(self):
+        return self.credit.outstanding if self.credit else Decimal('0')
+
+    @property
+    def paid_amount(self):
+        return self.total_amount - self.outstanding_amount if self.credit else (self.payment.amount if self.payment else None)
+
+    @property
+    def whatsapp_status(self):
+        return self.credit.notification.status if self.credit and self.credit.notification else None
+
     @property
     def company(self):
         return self.company_record

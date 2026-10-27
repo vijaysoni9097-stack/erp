@@ -69,7 +69,7 @@ export function populateInvoice(doc, invoice, medicines, money) {
   if(invoice.payment){
     const p=invoice.payment;
     add('p',`Method: ${{cash:'Cash',upi:'UPI',card:'Card',bank_transfer:'Bank transfer'}[p.method] || p.method}`,payment);
-    add('p',`Amount collected: ${money(p.amount)}`,payment,'status');
+    add('p',`Collected at checkout: ${money(p.amount)}`,payment,'status');
     add('p',`Tendered: ${money(p.tendered)} · Change returned: ${money(p.change)}`,payment);
     if(p.reference)add('p',`Reference: ${p.reference}`,payment);
   }else add('p','Payment collection not recorded',payment);
@@ -80,6 +80,7 @@ export function populateInvoice(doc, invoice, medicines, money) {
   total('Subtotal',invoice.subtotal);
   total('GST / tax recorded',invoice.tax_amount);
   total('Invoice total',invoice.total_amount,true);
+  if(invoice.outstanding_amount!=null && invoice.paid_amount!=null){total('Paid to date',invoice.paid_amount ?? invoice.payment?.amount ?? 0);total('Outstanding credit',invoice.outstanding_amount,true);}
   const footer=add('footer','',doc.body,'footer');
   add('p','Please check the medicines, batch and expiry before use. Keep this invoice for your records.',footer);
   add('p','Pharmacist / Authorised signatory',footer,'signature');

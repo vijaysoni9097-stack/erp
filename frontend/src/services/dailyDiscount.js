@@ -5,8 +5,8 @@ const key = (userId, day) => `erp:daily-discount:${userId}:${day}`;
 export function readDailyDiscount(storage, userId, day) {
   try {
     const value = storage.getItem(key(userId, day));
-    return value !== null && validDiscount(value) ? String(value) : '';
-  } catch { return ''; }
+    return value !== null && validDiscount(value) ? String(value) : '0';
+  } catch { return '0'; }
 }
 export function saveDailyDiscount(storage, userId, day, value) {
   if (!validDiscount(value)) return false;

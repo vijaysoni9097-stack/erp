@@ -2,7 +2,7 @@ import { isLowStock, isZeroStock } from './stockSummary.js';
 import { isExpiringSoon } from './expiry.js';
 import { dayKey, saleDate, toPaise } from './dailySales.js';
 
-export function dashboardData({ medicines, sales, orders, prescriptions, customers, suppliers }, now = new Date()) {
+export function dashboardData({ medicines, sales, orders, prescriptions, customers, suppliers, creditCollections = {} }, now = new Date()) {
   const today = dayKey(now);
   const low = medicines.filter(isLowStock);
   const expiry = medicines.filter(m => isExpiringSoon(m, now)).sort((a,b) => a.expiry_date.localeCompare(b.expiry_date));
@@ -15,7 +15,7 @@ export function dashboardData({ medicines, sales, orders, prescriptions, custome
       todayPayments[method] += toPaise(sale.payment.amount);
     } else todayPayments.unrecorded += toPaise(sale.total_amount);
   }
-  for (const method of Object.keys(todayPayments)) todayPayments[method] /= 100;
+  for (const method of Object.keys(todayPayments)) todayPayments[method] = (todayPayments[method] + toPaise(creditCollections[method] || 0)) / 100;
   const salesByPeriod = {};
   for (const period of ['This Week', 'This Month', 'This Year']) {
     const start = new Date(`${today}T12:00:00`);

@@ -43,6 +43,12 @@
 .credit-due-list{max-height:220px;overflow:auto;margin:12px 0}
 .credit-due-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0;border-bottom:1px solid var(--border)}
 .credit-due-row strong{font-size:12px}.credit-due-row small{display:block;margin-top:5px;font-size:11px;color:var(--text-muted)}.credit-due-row button{flex-shrink:0}
+.credit-due-row.is-selected{padding-inline:10px;border-radius:8px;background:var(--accent-bg);box-shadow:inset 3px 0 var(--accent)}
+.credit-inline-dues button[aria-pressed=true]:disabled{opacity:1;border-color:var(--accent);color:var(--accent)}
+.credit-inline-dues .credit-select-all{margin-top:12px}
+.credit-selection-hint{font-size:12px;color:var(--text-muted);line-height:1.6}
+.credit-trigger:disabled{cursor:not-allowed;opacity:.65}
+.credit-collection input[readonly]{background:var(--accent-bg);font-weight:650}
 .credit-inline-payment{border-top:1px solid var(--border);margin-top:14px;padding-top:14px}.credit-inline-payment .credit-secondary{margin-top:12px;background:var(--surface)}
 .credit-inline-payment .credit-collection{padding:12px;margin-top:12px}
 .credit-acknowledgment{border:1px solid var(--border);border-radius:16px;padding:24px;max-width:480px;width:calc(100% - 32px);color:var(--text);background:var(--surface);font-family:inherit;box-shadow:0 24px 80px #17233c33}

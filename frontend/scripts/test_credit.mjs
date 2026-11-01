@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import {checkoutPayment} from '../src/services/creditPayment.js';
+import {checkoutPayment, customerDues, duesTotal, loadCustomerDues} from '../src/services/creditPayment.js';
 import {dashboardData} from '../src/services/dashboardData.js';
 import {populateInvoice} from '../src/services/printInvoice.js';
 const base={mode:'paid',method:'cash',received:'100',total:100,confirmed:true,reference:'',phone:null};
@@ -13,6 +13,23 @@ assert.equal(checkoutPayment({...base,mode:'credit',received:'',confirmed:false,
 for(const received of ['0','100','100.01','1.001','-1','abc'])assert.equal(checkoutPayment({...base,mode:'partial',received,phone:'+919876543210'}).valid,false);
 assert.equal(checkoutPayment({...base,method:'upi',mode:'partial',received:'20',phone:'+919876543210'}).valid,false);
 assert.equal(checkoutPayment({...base,method:'upi',mode:'partial',received:'20',reference:'UTR-1',phone:'+919876543210'}).valid,true);
+const dues=[{sale_id:1,customer_name:' Test Patient ',outstanding:'0.10'},
+  {sale_id:2,customer_name:'test patient',outstanding:'0.20'},
+  {sale_id:3,customer_name:'Other family member',outstanding:'50'},
+  {sale_id:4,customer_name:'Test Patient',outstanding:'0'}];
+assert.deepEqual(customerDues(dues,'Test Patient').map(item=>item.sale_id),[1,2]);
+assert.equal(duesTotal(customerDues(dues,'Test Patient')),0.3);
+const pages=Array.from({length:102},(_,i)=>({sale_id:i+1,customer_name:i===0?'Other family member':'Test Patient',outstanding:'0.10'}));
+const offsets=[];
+const allDues=await loadCustomerDues(async (url,{params})=>{
+  assert.equal(url,'/credits');assert.equal(params.phone,'+919876543210');
+  offsets.push(params.offset);
+  return {data:{items:pages.slice(params.offset,params.offset+params.limit),count:pages.length}};
+},'+919876543210','Test Patient');
+assert.deepEqual(offsets,[0,100]);assert.equal(allDues.length,101);assert.equal(duesTotal(allDues),10.1);
+assert.ok(allDues.every(item=>item.customer_name==='Test Patient'));
+await assert.rejects(loadCustomerDues(async()=>({data:{items:[],count:1}}),'phone','Test Patient'),/changed/);
+await assert.rejects(loadCustomerDues(async()=>{throw new Error('offline');},'phone','Test Patient'),/offline/);
 const now=new Date('2026-10-27T12:00:00Z');
 const data=dashboardData({medicines:[],sales:[{id:1,status:'completed',created_at:now.toISOString(),total_amount:100,payment:{method:'cash',amount:20},items:[]}],orders:[],prescriptions:[],customers:[],suppliers:[],creditCollections:{cash:30,upi:10}},now);
 assert.equal(data.todaySales,100);assert.equal(data.todayPayments.cash,50);assert.equal(data.todayPayments.upi,10);

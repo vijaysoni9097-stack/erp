@@ -7,3 +7,22 @@ export function checkoutPayment({mode, method, received, total, confirmed, refer
     (tendered===0||confirmed)&&(tendered===0||method==='cash'||Boolean(reference.trim()))&&(outstanding===0||Boolean(phone));
   return {tendered,outstanding,valid};
 }
+
+export const customerDues = (items, name) => items.filter(invoice =>
+  invoice.customer_name.trim().toLowerCase() === name.trim().toLowerCase() && Number(invoice.outstanding) > 0);
+
+export const duesTotal = items => items.reduce((cents, invoice) => cents + Math.round(Number(invoice.outstanding) * 100), 0) / 100;
+
+// Fetch every page so "all" also includes invoices beyond the account preview.
+export async function loadCustomerDues(get, phone, name) {
+  const items = new Map();
+  let offset = 0;
+  while (true) {
+    const {data} = await get('/credits', {timeout:90000, params:{phone, offset, limit:100}});
+    for (const invoice of customerDues(data.items, name)) items.set(invoice.sale_id, invoice);
+    offset += data.items.length;
+    if (offset >= data.count) break;
+    if (!data.items.length) throw new Error('Credit records changed. Retry selection.');
+  }
+  return [...items.values()];
+}

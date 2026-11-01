@@ -103,6 +103,85 @@ class CreditTests(auth.unittest.TestCase):
         self.assertEqual(float(paid['paid_amount']),6.5)
         self.assertIsNone(paid['whatsapp_status'])
 
+    def bulk_payment(self, sales, amounts):
+        from decimal import Decimal
+        return {**self.payment(str(sum(Decimal(amount) for amount in amounts))),
+                'allocations':[dict(sale_id=sale['id'], amount=amount) for sale, amount in zip(sales, amounts)]}
+
+    def test_bulk_settlement_is_atomic_and_retry_safe(self):
+        first,_=self.credit('1');second,_=self.credit('2')
+        h=self.headers();p=self.bulk_payment([first,second],['5.50','4.50']);url='/api/v1/credits/collections'
+        result=self.client.post(url,headers=h,json=p)
+        self.assertEqual(result.status_code,200,result.text)
+        self.assertFalse(result.json()['replayed'])
+        self.assertTrue(self.client.post(url,headers=h,json=p).json()['replayed'])
+        changed=self.bulk_payment([first],['5.50']);changed['request_id']=p['request_id']
+        self.assertEqual(self.client.post(url,headers=h,json=changed).status_code,409)
+        with SessionLocal() as db:
+            self.assertEqual(db.scalar(select(func.count()).select_from(CreditCollection)),2)
+            self.assertEqual(db.get(SaleCredit,first['id']).outstanding,0)
+            self.assertEqual(db.get(SaleCredit,second['id']).outstanding,0)
+        for sale in [first,second]:
+            detail=self.client.get(f"/api/v1/credits/{sale['id']}",headers=h).json()
+            self.assertEqual(float(detail['invoice']['paid_amount']),6.5)
+            self.assertEqual(len(detail['collections']),1)
+
+    def test_bulk_rejects_changed_balances_without_collecting_other_dues(self):
+        first,_=self.credit();second,_=self.credit()
+        h=self.headers();p=self.bulk_payment([first,second],['6.50','6.50'])
+        self.client.post(f"/api/v1/credits/{second['id']}/collections",headers=h,json=self.payment('1'))
+        result=self.client.post('/api/v1/credits/collections',headers=h,json=p)
+        self.assertEqual(result.status_code,422,result.text)
+        with SessionLocal() as db:
+            self.assertEqual(float(db.get(SaleCredit,first['id']).outstanding),6.5)
+            self.assertEqual(float(db.get(SaleCredit,second['id']).outstanding),5.5)
+            self.assertEqual(db.scalar(select(func.count()).select_from(CreditCollection)),1)
+
+    def test_bulk_rejects_shared_number_names_and_other_mobiles(self):
+        first,_=self.credit();second,_=self.credit();other,_=self.credit(phone='9999999999')
+        with SessionLocal() as db:
+            db.get(SaleCredit,second['id']).customer_name='Other family member';db.commit()
+        h=self.headers()
+        for sale in [second,other]:
+            result=self.client.post('/api/v1/credits/collections',headers=h,json=self.bulk_payment([first,sale],['6.50','6.50']))
+            self.assertEqual(result.status_code,422,result.text)
+        with SessionLocal() as db:
+            self.assertEqual(db.scalar(select(func.count()).select_from(CreditCollection)),0)
+
+    def test_bulk_validation_and_access(self):
+        first,_=self.credit();second,_=self.credit();h=self.headers();url='/api/v1/credits/collections'
+        valid=self.bulk_payment([first,second],['6.50','6.50'])
+        for changes in [{'allocations':[]},
+                        {'allocations':[valid['allocations'][0]]*2},
+                        {'payment':dict(method='cash',tendered='12',confirmed=True)},
+                        {'payment':dict(method='cash',tendered='13',confirmed=False)},
+                        {'payment':dict(method='upi',tendered='13',confirmed=True)},
+                        {'allocations':[dict(sale_id=first['id'],amount='-1')]},
+                        {'allocations':[dict(sale_id=first['id'],amount='6.501')]}]:
+            result=self.client.post(url,headers=h,json={**valid,**changes})
+            self.assertEqual(result.status_code,422,result.text)
+        missing=self.bulk_payment([first,{'id':999999}],['6.50','6.50'])
+        self.assertEqual(self.client.post(url,headers=h,json=missing).status_code,404)
+        with SessionLocal() as db:
+            db.get(PharmacistProfile,1).role='doctor';db.commit()
+        self.assertEqual(self.client.post(url,headers=h,json=valid).status_code,403)
+        with SessionLocal() as db:
+            self.assertEqual(db.scalar(select(func.count()).select_from(CreditCollection)),0)
+
+    def test_bulk_and_single_concurrent_collection_cannot_double_charge(self):
+        from concurrent.futures import ThreadPoolExecutor
+        first,_=self.credit();second,_=self.credit();h=self.headers()
+        requests=[('/api/v1/credits/collections',self.bulk_payment([first,second],['6.50','6.50'])),
+                  (f"/api/v1/credits/{second['id']}/collections",self.payment('6.50'))]
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            results=list(pool.map(lambda request:self.client.post(request[0],headers=h,json=request[1]).status_code,requests))
+        self.assertEqual(sorted(results),[200,422])
+        with SessionLocal() as db:
+            self.assertEqual(db.get(SaleCredit,second['id']).outstanding,0)
+            collected=float(db.scalar(select(func.sum(CreditCollection.amount))))
+            remaining=float(db.scalar(select(func.sum(SaleCredit.outstanding))))
+            self.assertEqual(collected+remaining,13)
+
     def test_notification_outbox_acceptance_and_no_duplicates(self):
         sale,_=self.credit(consent=True)
         settings=SimpleNamespace(whatsapp_api_version='v99.0',whatsapp_phone_number_id='123',whatsapp_access_token='test-only',whatsapp_template_name='credit_notice',whatsapp_template_language='en')

@@ -1,9 +1,10 @@
 """Invoice-specific credit and repayment APIs, protected by the existing login."""
 from datetime import datetime, timezone
+from decimal import Decimal
 from hashlib import sha256
-from uuid import UUID
+from uuid import UUID, uuid5
 from fastapi import Depends, HTTPException, Query
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 from app.api.base import BaseAPI, RouteDefinition
@@ -18,6 +19,16 @@ class CollectionCreate(BaseModel):
     model_config = ConfigDict(extra='forbid')
     request_id: UUID
     payment: PaymentCreate
+
+
+class DueAllocation(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+    sale_id: int = Field(gt=0)
+    amount: Decimal = Field(gt=0, max_digits=12, decimal_places=2)
+
+
+class BulkCollectionCreate(CollectionCreate):
+    allocations: list[DueAllocation] = Field(min_length=1)
 
 
 def access(actor):
@@ -35,6 +46,7 @@ class CreditAPI(BaseAPI):
     routes = [
         RouteDefinition('/api/v1/credits/summary', 'summary', 'GET', tags=['Credit']),
         RouteDefinition('/api/v1/credits', 'get', 'GET', tags=['Credit']),
+        RouteDefinition('/api/v1/credits/collections', 'collect_all', 'POST', tags=['Credit']),
         RouteDefinition('/api/v1/credits/{id}', 'detail', 'GET', tags=['Credit']),
         RouteDefinition('/api/v1/credits/{id}/notification/retry', 'retry_notification', 'POST', tags=['Credit']),
         RouteDefinition('/api/v1/credits/{id}/collections', 'collect', 'POST', tags=['Credit']),
@@ -102,6 +114,44 @@ class CreditAPI(BaseAPI):
             amount=payload.payment.tendered, method=payload.payment.method, reference=payload.payment.reference)
         db.add(entry); db.commit()
         return dict(request_id=str(payload.request_id), sale_id=id, amount=payload.payment.tendered, replayed=False)
+
+    @staticmethod
+    def collect_all(payload: BulkCollectionCreate, actor=Depends(get_current_profile), db: Session = Depends(get_db)):
+        """Settle the selected customer's dues atomically with an immutable retry key."""
+        access(actor)
+        ids = [item.sale_id for item in payload.allocations]
+        if len(set(ids)) != len(ids):
+            raise HTTPException(422, 'Select each invoice only once')
+        if sum(item.amount for item in payload.allocations) != payload.payment.tendered:
+            raise HTTPException(422, 'Payment must equal the total selected dues')
+        if db.bind.dialect.name == 'sqlite':
+            from sqlalchemy import text
+            db.rollback(); db.execute(text('BEGIN IMMEDIATE'))
+        lock_inventory(db)
+        digest = sha256(f'bulk:{payload.model_dump_json()}'.encode()).hexdigest()
+        keys = [str(payload.request_id)] + [str(uuid5(payload.request_id, str(id))) for id in ids[1:]]
+        previous = [db.get(CreditCollection, key) for key in keys]
+        if any(previous):
+            if not all(entry and entry.actor_id == actor.id and entry.payload_hash == digest for entry in previous):
+                raise HTTPException(409, 'Collection reference already used for another payment')
+            return dict(request_id=str(payload.request_id), amount=payload.payment.tendered, sale_ids=ids, replayed=True)
+        credits = db.scalars(select(SaleCredit).where(SaleCredit.sale_id.in_(ids)).order_by(SaleCredit.sale_id).with_for_update()).all()
+        if len(credits) != len(ids):
+            raise HTTPException(404, 'A selected credit invoice was not found')
+        if len({(c.phone, c.customer_name.strip().lower()) for c in credits}) != 1:
+            raise HTTPException(422, 'Select dues belonging to the same customer and mobile')
+        by_id = {credit.sale_id: credit for credit in credits}
+        for item in payload.allocations:
+            if db.get(Sale, item.sale_id).status != SaleStatus.completed:
+                raise HTTPException(409, 'Cannot collect a voided invoice')
+            if by_id[item.sale_id].outstanding != item.amount:
+                raise HTTPException(422, 'A selected balance changed; close the payment and select the dues again')
+        for item, key in zip(payload.allocations, keys):
+            by_id[item.sale_id].outstanding = 0
+            db.add(CreditCollection(request_id=key, sale_id=item.sale_id, actor_id=actor.id, payload_hash=digest,
+                amount=item.amount, method=payload.payment.method, reference=payload.payment.reference))
+        db.commit()
+        return dict(request_id=str(payload.request_id), amount=payload.payment.tendered, sale_ids=ids, replayed=False)
 
     @staticmethod
     def retry_notification(id: int, actor=Depends(get_current_profile), db: Session = Depends(get_db)):

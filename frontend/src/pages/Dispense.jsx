@@ -49,6 +49,7 @@ export default function Dispense({profile}) {
   const [paymentReference, setPaymentReference] = useState('');
   const [paymentConfirmed, setPaymentConfirmed] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [collectingDues,setCollectingDues] = useState(false);
   const [error, setError] = useState('');
   const [receipt, setReceipt] = useState(null);
   const [pending, setPending] = useState(null);
@@ -67,7 +68,7 @@ export default function Dispense({profile}) {
     }).catch(()=>{}),5000);
     return()=>{clearInterval(timer);controller.abort();};
   },[receipt?.id,receipt?.whatsapp_status]);
-  const locked = busy || Boolean(pending);
+  const locked = busy || Boolean(pending) || collectingDues;
 
   const normalizedMobile = normalizeCustomerMobile(mobile);
   useEffect(() => {
@@ -172,7 +173,7 @@ export default function Dispense({profile}) {
   async function checkout(event, creditAcknowledged = false) {
     event?.preventDefault();
     if (!pending && dayKey() !== discountDay) { setDiscountDay(dayKey()); setError('A new day has started. Today’s default is 0% unless saved. Review this bill’s discounts and submit again.'); return; }
-    if(submitting.current || (!pending && (!cart.length || invalid || !paymentValid || !discountReady || normalizedMobile === null || !patient.trim()))) return;
+    if(submitting.current || collectingDues || (!pending && (!cart.length || invalid || !paymentValid || !discountReady || normalizedMobile === null || !patient.trim()))) return;
     if (!pending && outstanding>0 && !creditAcknowledged) { creditDialog.current.showModal(); return; }
     const payload = pending || {request_id:crypto.randomUUID(),patient_name:patient.trim(),prescribed_by:prescriber.trim() || 'self',customer_mobile:normalizedMobile || null,credit_acknowledged:creditAcknowledged,whatsapp_consent:whatsappConsent,payment:{method:saleMode==='credit'?'cash':paymentMethod,tendered:tendered.toFixed(2),reference:saleMode==='credit'||paymentMethod === 'cash' ? null : paymentReference.trim(),confirmed:paymentConfirmed},items:cart.map(item => ({medicine_id:item.id,quantity:item.quantity,discount_percent:Number(item.discount_percent)}))};
     submitting.current = true; setBusy(true); setPending(payload); setError('');
@@ -226,7 +227,7 @@ export default function Dispense({profile}) {
           <label className="dispense-field">Patient name <span>*</span><input required minLength={2} maxLength={150} value={patient} onChange={e=>{nameEdited.current=true;autoName.current='';setPatient(e.target.value);setPaymentConfirmed(false);}} placeholder="Enter patient's full name" autoComplete="off" /></label>
           <label className="dispense-field">Prescribed by <small>Optional</small><input minLength={2} maxLength={150} list="dispense-doctors" value={prescriber} onChange={e=>{setPrescriber(e.target.value);setPaymentConfirmed(false);}} placeholder="Self (default) or doctor’s name" autoComplete="off" /><datalist id="dispense-doctors">{doctors.map(name=><option key={name} value={name} />)}</datalist></label>
         </fieldset>
-        {normalizedMobile && <CreditAccounts key={normalizedMobile} phone={normalizedMobile} refreshKey={reload} currentUnpaid={outstanding} />}
+        {normalizedMobile && <CreditAccounts key={normalizedMobile} phone={normalizedMobile} refreshKey={reload} currentUnpaid={outstanding} customerName={patient} onCollectionLockChange={setCollectingDues} checkoutLocked={busy||Boolean(pending)} />}
         <p className="dispense-hint">{doctorError ? 'Doctor suggestions are unavailable. Leave blank for Self or enter the prescriber’s name.' : 'Leave blank for Self, or select or enter the prescriber’s name.'}</p>
         <div className="dispense-cart-heading"><h3>Selected medicines</h3><span>{cart.length} items</span></div>
         {!cart.length ? <div className="dispense-cart-empty"><i className="fa-solid fa-basket-shopping" aria-hidden="true" /><p>Your bill starts here</p><small>Add medicines from the list.</small></div> : <div className="dispense-cart">{cart.map(item=>{const m=stock.get(item.id);return <div className="dispense-cart-item" key={item.id}><div className="dispense-cart-name"><strong>{m?.name || 'Unavailable medicine'}</strong><button type="button" aria-label={`Remove ${m?.name || 'medicine'}`} disabled={locked} onClick={()=>{setCart(items=>items.filter(i=>i.id!==item.id));setPaymentConfirmed(false);}}><i className="fa-solid fa-xmark" aria-hidden="true" /></button></div><small>Batch {m?.batch_number} · {money(m?.selling_price || 0)} / unit</small><div className="dispense-cart-line"><div className="dispense-quantity"><button type="button" aria-label={`Decrease ${m?.name} quantity`} disabled={locked || item.quantity<=1} onClick={()=>quantity(item.id,item.quantity-1)}>−</button><input aria-label={`Quantity for ${m?.name}`} type="number" min="1" max={m?.stock_quantity || 1} step="1" required disabled={locked} value={item.quantity} onChange={e=>quantity(item.id,e.target.value)} /><button type="button" aria-label={`Increase ${m?.name} quantity`} disabled={locked || item.quantity>=m?.stock_quantity} onClick={()=>quantity(item.id,Number(item.quantity)+1)}>+</button></div><strong>{money(discountLine(m?.selling_price||0,item.quantity,item.discount_percent)?.total||0)}</strong></div><label className="dispense-line-discount">Discount %<input type="number" min="0" max="100" step="0.01" required disabled={locked} aria-label={`Discount percentage for ${m?.name}`} value={item.discount_percent} onChange={event=>{setCart(items=>items.map(row=>row.id===item.id?{...row,discount_percent:event.target.value}:row));setPaymentConfirmed(false);}}/><span>Save {money(discountLine(m?.selling_price||0,item.quantity,item.discount_percent)?.discount||0)}</span></label></div>;})}</div>}
@@ -242,6 +243,7 @@ export default function Dispense({profile}) {
           </>}
           {saleMode!=='paid'&&<><p className="dispense-hint">Unpaid on this bill: <strong>{money(outstanding)}</strong>. A valid customer mobile is mandatory.</p><label className="dispense-paid-confirmation"><input type="checkbox" checked={whatsappConsent} onChange={e=>setWhatsappConsent(e.target.checked)} /><span>Customer agrees to receive this credit notification on WhatsApp.</span></label></>}
         </fieldset>
+        {collectingDues && <p className="dispense-hint" role="status">Confirm the previous-due payment before completing this medicine sale.</p>}
         {invalid && <div className="dispense-error" role="alert">{lineErrors.map(row => <p key={row.id}><strong>{row.name}:</strong> {row.message}</p>)}</div>}
         {error && <p className="dispense-error" role="alert">{error}</p>}
         {pending && !busy && <p className="dispense-hint">Keep this page open and retry this bill to confirm its status without creating a duplicate.</p>}
@@ -249,7 +251,7 @@ export default function Dispense({profile}) {
           <p>Enter a valid customer discount from 0–100% with up to two decimal places, or leave the customer override blank to use today’s default.</p>
         </div>}
         {!pending && saleMode!=='paid' && !normalizedMobile && <p className="dispense-error" role="status">Enter a valid customer mobile to enable credit checkout.</p>}
-        <button aria-describedby={!discountReady && cart.length>0 ? 'checkout-discount-help' : undefined} className="dispense-checkout" type="submit" disabled={busy || (!pending && (loading || Boolean(loadError) || !cart.length || invalid || !paymentValid || !discountReady || normalizedMobile === null))}>{busy ? 'Confirming sale…' : pending ? 'Retry / confirm this sale' : saleMode==='paid'?`Complete paid sale · ${money(total)}`:`Complete credit sale · ${money(outstanding)} unpaid`} <i className="fa-solid fa-arrow-right" aria-hidden="true" /></button>
+        <button aria-describedby={!discountReady && cart.length>0 ? 'checkout-discount-help' : undefined} className="dispense-checkout" type="submit" disabled={busy || collectingDues || (!pending && (loading || Boolean(loadError) || !cart.length || invalid || !paymentValid || !discountReady || normalizedMobile === null))}>{busy ? 'Confirming sale…' : pending ? 'Retry / confirm this sale' : saleMode==='paid'?`Complete paid sale · ${money(total)}`:`Complete credit sale · ${money(outstanding)} unpaid`} <i className="fa-solid fa-arrow-right" aria-hidden="true" /></button>
         <p className="dispense-footer-note"><i className="fa-solid fa-shield-halved" aria-hidden="true" /> Stock and final prices are checked when you complete the sale.</p>
       </form>
     </div>

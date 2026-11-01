@@ -1,19 +1,53 @@
-.credit-summary {margin: 0 0 20px;}
-.credit-trigger {width:100%;text-align:left;}
-.credit-customer {margin:12px 0;}
-.credit-customer > small {display:block;margin-top:8px;color:#64748b;line-height:1.5;}
-.credit-dialog {padding:24px;color:#263445;}
-.credit-dialog h3 {font-size:16px;margin:20px 0 12px;}
-.credit-dialog button:not(.today-sales-close) {border:1px solid #d6e4e6;border-radius:8px;background:#eef6f5;color:#17635e;padding:8px 12px;}
-.credit-dialog button:disabled {opacity:.5;cursor:not-allowed;}
-.credit-collection fieldset {display:flex;gap:12px;flex-wrap:wrap;border:0;padding:0;}
-.credit-collection label {display:flex;flex:1 1 160px;flex-direction:column;gap:6px;}
-.credit-collection input,.credit-collection select {padding:9px;border:1px solid #d6e4e6;border-radius:8px;}
-.credit-collection .credit-check {flex-direction:row;align-items:center;flex-basis:100%;}
-.credit-acknowledgment {border:0;border-radius:16px;padding:24px;max-width:480px;width:calc(100% - 32px);color:#263445;box-shadow:0 20px 80px #14273744;}
-.credit-acknowledgment::backdrop {background:#15263888;}
-.credit-acknowledgment h2 {font-size:22px;}
-.credit-acknowledgment button {padding:10px 16px;margin:12px 10px 0 0;border:1px solid #bfd8d3;border-radius:8px;background:#eef6f5;color:#17635e;}
-
-.credit-combined {background:#f0f7f5;padding:10px;border-radius:8px;line-height:1.6;color:#245b51;font-size:13px;}
-.dispense-field select {width:100%;padding:10px 12px;border:1px solid #dbe2e8;border-radius:8px;background:white;color:#263445;}
+.credit-summary{margin:0 0 20px}
+.credit-trigger{width:100%;text-align:left}
+.credit-customer{margin:12px 0;min-width:0}
+.credit-customer>small{display:block;margin-top:8px;color:var(--text-muted);font-size:11px;line-height:1.6}
+.credit-combined{background:var(--accent-bg);padding:12px;border:1px solid var(--accent-border);border-radius:10px;line-height:1.7;color:var(--text);font-size:12px}
+.credit-dialog{width:min(900px,calc(100% - 32px));padding:0;border:1px solid var(--border);border-radius:18px;background:var(--surface);color:var(--text);font-family:inherit;box-shadow:0 24px 80px #17233c33}
+.credit-dialog::backdrop,.credit-acknowledgment::backdrop{background:#17233c88;backdrop-filter:blur(3px)}
+.credit-dialog .today-sales-header{padding:22px 26px;background:var(--surface);position:sticky;top:0;z-index:1;border-bottom:1px solid var(--border)}
+.credit-dialog .today-sales-close{border:1px solid var(--border);border-radius:10px;font-size:22px}
+.credit-eyebrow{display:block;font-size:10px;font-weight:700;letter-spacing:.9px;text-transform:uppercase;color:var(--accent);margin-bottom:6px}
+.credit-dialog-body{padding:24px 26px}
+.credit-dialog h3,.credit-inline-dues h3{font-size:15px;line-height:1.4;font-weight:650;margin:0}
+.credit-dialog-body>h3{margin:24px 0 12px}
+.credit-dialog-body>p{font-size:12px;line-height:1.7;color:var(--text-muted);margin:12px 0}
+.credit-dialog button:not(.today-sales-close),.credit-inline-dues button{border:1px solid var(--accent-border);border-radius:8px;background:var(--accent-bg);color:var(--accent);padding:9px 12px;font-family:inherit;font-size:12px;font-weight:600;cursor:pointer}
+.credit-dialog button:not(.today-sales-close){margin:0 8px 10px 0}
+.credit-dialog button:hover,.credit-inline-dues button:hover{filter:brightness(.97)}
+.credit-dialog button:disabled,.credit-inline-dues button:disabled{opacity:.5;cursor:not-allowed}
+.credit-dialog .today-sales-invoice-link{border:0;background:transparent;padding:0;margin:0;text-align:left}
+.credit-person{display:flex;align-items:center;gap:12px;margin:18px 0}
+.credit-person strong{font-size:15px}.credit-person small{display:block;font-size:12px;color:var(--text-muted);margin-top:4px}
+.credit-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:18px 0}
+.credit-stats>div{padding:14px;border:1px solid var(--border);border-radius:10px;background:var(--surface-muted)}
+.credit-stats span{display:block;font-size:11px;color:var(--text-muted);margin-bottom:6px}.credit-stats strong{font-size:20px;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}.credit-stats>div:last-child{border-color:var(--accent-border);background:var(--accent-bg)}
+.credit-dialog .today-sales-table-wrap{border:1px solid var(--border);border-radius:10px;margin:16px 0}
+.credit-dialog .today-sales-table{min-width:480px}
+.credit-dialog .today-sales-table th{font-size:11px}.credit-dialog .today-sales-table td{font-size:12px}
+.credit-collection{border:1px solid var(--border);background:var(--surface-muted);border-radius:12px;padding:16px;margin-top:18px}
+.credit-collection>h3{margin:0 0 14px}
+.credit-collection fieldset{display:flex;gap:12px;flex-wrap:wrap;border:0!important;padding:0;margin:0;min-width:0}
+.credit-collection label{display:flex;flex:1 1 160px;flex-direction:column;gap:7px;font-size:12px;font-weight:600;color:var(--text)}
+.credit-collection input:not([type=checkbox]),.credit-collection select{width:100%;min-width:0;padding:10px 12px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text);font:inherit}
+.credit-collection .credit-check{flex-direction:row;align-items:center;flex-basis:100%;font-weight:400;line-height:1.6}
+.credit-check input{accent-color:var(--accent);flex-shrink:0}
+.credit-dialog .credit-primary,.credit-inline-dues .credit-primary{background:var(--accent);border-color:var(--accent);color:#fff;margin:14px 0 0}
+.credit-error,.credit-notice{padding:12px 14px;border-radius:9px;font-size:12px;line-height:1.6;margin:12px 0}
+.credit-error{background:#fff1f2;border:1px solid #fecdd3;color:#9f1239}
+.credit-notice{background:var(--accent-bg);border:1px solid var(--accent-border);color:var(--accent)}
+.credit-inline-dues{margin:14px 0;border:1px solid var(--accent-border);border-radius:12px;background:var(--surface);padding:16px;min-width:0}
+.credit-inline-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.credit-account-name{font-size:11px;color:var(--text-muted);overflow-wrap:anywhere}
+.credit-inline-dues>p{font-size:11px;color:var(--text-muted);line-height:1.6;margin:10px 0}
+.credit-due-list{max-height:220px;overflow:auto;margin:12px 0}
+.credit-due-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0;border-bottom:1px solid var(--border)}
+.credit-due-row strong{font-size:12px}.credit-due-row small{display:block;margin-top:5px;font-size:11px;color:var(--text-muted)}.credit-due-row button{flex-shrink:0}
+.credit-inline-payment{border-top:1px solid var(--border);margin-top:14px;padding-top:14px}.credit-inline-payment .credit-secondary{margin-top:12px;background:var(--surface)}
+.credit-inline-payment .credit-collection{padding:12px;margin-top:12px}
+.credit-acknowledgment{border:1px solid var(--border);border-radius:16px;padding:24px;max-width:480px;width:calc(100% - 32px);color:var(--text);background:var(--surface);font-family:inherit;box-shadow:0 24px 80px #17233c33}
+.credit-acknowledgment h2{font-size:22px;font-weight:650}.credit-acknowledgment p{font-size:13px;line-height:1.7}
+.credit-acknowledgment button{padding:10px 16px;margin:12px 10px 0 0;border:1px solid var(--accent-border);border-radius:8px;background:var(--accent-bg);color:var(--accent);font-size:12px;font-weight:600}
+.credit-acknowledgment button:last-child{background:var(--accent);color:#fff}
+.dispense-field select{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text)}
+@media(max-width:600px){.credit-dialog-body{padding:18px 16px}.credit-dialog .today-sales-header{padding:18px 16px}.credit-stats{gap:7px}.credit-stats>div{padding:10px}.credit-stats strong{font-size:16px}.credit-dialog .today-sales-header h2{font-size:20px}.credit-inline-dues{padding:12px}.credit-collection label{flex-basis:100%}}

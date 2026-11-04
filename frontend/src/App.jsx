@@ -147,15 +147,16 @@ function App() {
             <Route path="/machines" element={<Machines />} />
             <Route path="/messages" element={<Messages />} />
             <Route path="/settings" element={<Navigate to="/settings/profile" replace />} />
-            <Route path="/settings/company" element={<Setting onLogout={handleLogout} />} />
-            <Route path="/settings/profile" element={<Setting onLogout={handleLogout} />} />
-            <Route path="/settings/password" element={<Setting onLogout={handleLogout} />} />
-            <Route path="/settings/prescription-preferences" element={<Setting onLogout={handleLogout} />} />
-            <Route path="/settings/inventory-preferences" element={<Setting onLogout={handleLogout} />} />
-            <Route path="/inventory-preferences" element={<Setting onLogout={handleLogout} />} />
-            <Route path="/settings/printer" element={<Setting onLogout={handleLogout} />} />
-            <Route path="/settings/notifications" element={<Setting onLogout={handleLogout} />} />
-            <Route path="/settings/security" element={<Setting onLogout={handleLogout} />} />
+            <Route path="/settings/import" element={<Setting profile={profile} onLogout={handleLogout} />} />
+            <Route path="/settings/company" element={<Setting profile={profile} onLogout={handleLogout} />} />
+            <Route path="/settings/profile" element={<Setting profile={profile} onLogout={handleLogout} />} />
+            <Route path="/settings/password" element={<Setting profile={profile} onLogout={handleLogout} />} />
+            <Route path="/settings/prescription-preferences" element={<Setting profile={profile} onLogout={handleLogout} />} />
+            <Route path="/settings/inventory-preferences" element={<Setting profile={profile} onLogout={handleLogout} />} />
+            <Route path="/inventory-preferences" element={<Setting profile={profile} onLogout={handleLogout} />} />
+            <Route path="/settings/printer" element={<Setting profile={profile} onLogout={handleLogout} />} />
+            <Route path="/settings/notifications" element={<Setting profile={profile} onLogout={handleLogout} />} />
+            <Route path="/settings/security" element={<Setting profile={profile} onLogout={handleLogout} />} />
           </Routes> : <Navigate to={location.pathname === '/purchase-orders' ? `/orders${location.search}` : '/dispense'} replace />}
         </main> 
       </div>

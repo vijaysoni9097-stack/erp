@@ -2,11 +2,14 @@ import React from 'react';
 import CompanyRegistration from './CompanyRegistration';
 import EmployeeProfile from './EmployeeProfile';
 import ChangePassword from './ChangePassword';
+import DataImport from './DataImport';
+import { canImportData } from '../services/pageAccess';
 import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import '../styles/Settings.css';
 
 const settingsTabs = [
   { key: 'company', label: 'Company Registration', path: '/settings/company', icon: 'fa-building' },
+  { key: 'import', label: 'Import Existing Data', path: '/settings/import', icon: 'fa-file-import', restricted: true },
   { key: 'profile', label: 'Profile Settings', path: '/settings/profile', icon: 'fa-user-gear' },
   { key: 'password', label: 'Change Password', path: '/settings/password', icon: 'fa-lock' },
   { key: 'prescription', label: 'Prescription Preferences', path: '/settings/prescription-preferences', icon: 'fa-prescription' },
@@ -31,6 +34,7 @@ const renderToggleRow = (title, description, checked = true) => (
 
 function renderSection(activeKey) {
   switch (activeKey) {
+    case 'import': return <DataImport />;
     case 'company': return <CompanyRegistration />;
     case 'password':
       return <ChangePassword />;
@@ -257,12 +261,15 @@ function renderSection(activeKey) {
   }
 }
 
-function Setting({ onLogout }) {
+function Setting({ onLogout, profile }) {
   const location = useLocation();
   const navigate = useNavigate();
 
   const normalizedPath = location.pathname.replace(/\/+$/, '');
-  const activeTab = settingsTabs.find((tab) => (tab.paths ? tab.paths.includes(normalizedPath) : tab.path === normalizedPath)) || settingsTabs[0];
+  const visibleTabs = settingsTabs.filter(tab => !tab.restricted || canImportData(profile?.role));
+  const activeTab = visibleTabs.find((tab) => (tab.paths ? tab.paths.includes(normalizedPath) : tab.path === normalizedPath)) || visibleTabs[0];
+
+  if (normalizedPath === '/settings/import' && !canImportData(profile?.role)) return <Navigate to="/settings/profile" replace />;
 
   if (normalizedPath === '/settings') {
     return <Navigate to="/settings/profile" replace />;
@@ -276,7 +283,7 @@ function Setting({ onLogout }) {
 
       <div className="settings-card">
         <aside className="settings-sidebar">
-          {settingsTabs.map((tab) => (
+          {visibleTabs.map((tab) => (
             <button
               key={tab.key}
               type="button"

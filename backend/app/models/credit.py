@@ -16,6 +16,7 @@ class SaleCredit(Base):
     actor_id: Mapped[int] = mapped_column()
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
     notification: Mapped['CreditNotification | None'] = relationship(uselist=False)
+    sale: Mapped['Sale'] = relationship(back_populates='credit')
 
 class CreditCollection(Base):
     __tablename__ = 'credit_collections'

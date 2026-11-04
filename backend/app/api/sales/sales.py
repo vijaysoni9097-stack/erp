@@ -23,13 +23,13 @@ from app.schemas import SaleCreate, SaleRead, CheckoutCreate
 from app.models.sales import CheckoutReceipt, SalePayment
 from app.models.credit import SaleCredit, CreditNotification
 from app.models.sync import SyncIdentity
-from app.models import PharmacistProfile
+from app.models import ImportedSale, PharmacistProfile
 from app.services.auth import get_current_profile
 
 
 def invoice_load_options():
     # Batch related invoice data instead of querying separately for each sale/line.
-    return (joinedload(Sale.credit).joinedload(SaleCredit.notification), joinedload(Sale.payment), joinedload(Sale.company_record),
+    return (joinedload(Sale.import_record), joinedload(Sale.credit).joinedload(SaleCredit.notification), joinedload(Sale.payment), joinedload(Sale.company_record),
             joinedload(Sale.customer), joinedload(Sale.prescription),
             selectinload(Sale.items).options(joinedload(SaleItem.discount_record),joinedload(SaleItem.medicine)))
 
@@ -67,7 +67,8 @@ class SaleAPI(BaseAPI):
         start, end = utc_naive(from_at), utc_naive(to_at)
         if start is not None and end is not None and start >= end:
             raise HTTPException(422,'The sales date range must end after it starts')
-        statement = select(Sale).options(*invoice_load_options())
+        opening_balances = select(ImportedSale.sale_id).where(ImportedSale.kind == 'opening_balances')
+        statement = select(Sale).where(~Sale.id.in_(opening_balances)).options(*invoice_load_options())
         if start is not None: statement = statement.where(Sale.created_at >= start)
         if end is not None: statement = statement.where(Sale.created_at < end)
         return list(db.scalars(statement.order_by(Sale.created_at.desc(),Sale.id.desc())))

@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 
 from app.api.base import BaseAPI, RouteDefinition
 from app.database import get_db
-from app.models import Medicine, Sale, SaleStatus
+from app.models import ImportedSale, Medicine, Sale, SaleStatus
 from app.schemas import DashboardRead
 
 
@@ -25,5 +25,6 @@ class DashboardAPI(BaseAPI):
             expiring_within_30_days=db.scalar(select(func.count(Medicine.id)).where(
                 Medicine.expiry_date.between(date.today(), date.today() + timedelta(days=30)))) or 0,
             today_sales_total=db.scalar(select(func.coalesce(func.sum(Sale.total_amount), 0)).where(
+                ~Sale.id.in_(select(ImportedSale.sale_id).where(ImportedSale.kind == 'opening_balances')),
                 Sale.status == SaleStatus.completed, Sale.created_at >= today_start, Sale.created_at < today_end)) or Decimal("0"),
         )

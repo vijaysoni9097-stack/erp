@@ -3,6 +3,7 @@
 from fastapi import FastAPI
 
 from app.api.credit import CreditAPI
+from app.api.data_import import DataImportAPI
 from app.api.billing import BillingAPI
 from app.api.auth.auth import AuthAPI
 from app.api.users import UsersAPI
@@ -25,6 +26,7 @@ API_CLASSES: tuple[type[BaseAPI], ...] = (
     DashboardAPI,
     AuthAPI,
     UsersAPI,
+    DataImportAPI,
     StockSnapshotAPI,
     SupplierAPI,
     MedicineAPI,

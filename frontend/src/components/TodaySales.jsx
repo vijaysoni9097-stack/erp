@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { api } from '../services/api';
 import { printInvoice } from '../services/printInvoice';
+import { invoiceLabel } from '../services/invoiceLabel';
 import { useCurrency } from '../contexts/CurrencyContext';
 import { dayKey, hasCollection, saleDate, summarizeDailySales } from '../services/dailySales';
 import '../styles/TodaySales.css';
 
 const paymentLabel = method => ({ cash: 'Cash', upi: 'UPI', card: 'Card', bank_transfer: 'Bank transfer' }[method] || method || 'Not recorded');
-const invoiceNumber = invoice => `INV-${String(invoice.id).padStart(6, '0')}`;
+const invoiceNumber = invoiceLabel;
 const timeLabel = invoice => saleDate(invoice.created_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
 
 export default function TodaySales({ medicines, refreshKey }) {

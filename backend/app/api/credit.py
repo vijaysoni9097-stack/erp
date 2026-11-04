@@ -11,7 +11,7 @@ from app.api.base import BaseAPI, RouteDefinition
 from app.database import get_db, lock_inventory
 from app.models import Sale, SaleStatus
 from app.models.credit import SaleCredit, CreditCollection, CreditNotification
-from app.schemas import PaymentCreate, SaleRead
+from app.schemas import PaymentCreate, SaleImportRead, SaleRead
 from app.services.auth import get_current_profile
 from app.services.customer_mobile import normalize_mobile
 
@@ -39,6 +39,7 @@ def access(actor):
 def row(credit):
     return dict(sale_id=credit.sale_id, customer_name=credit.customer_name, phone=credit.phone,
                 principal=credit.principal, outstanding=credit.outstanding, created_at=credit.created_at,
+                import_details=SaleImportRead.model_validate(credit.sale.import_record) if credit.sale.import_record else None,
                 whatsapp_status=credit.notification.status if credit.notification else None)
 
 class CreditAPI(BaseAPI):
@@ -78,7 +79,7 @@ class CreditAPI(BaseAPI):
             query = query.where(SaleCredit.phone == normalized)
         filtered = query.subquery()
         total, count = db.execute(select(func.coalesce(func.sum(filtered.c.outstanding), 0), func.count()).select_from(filtered)).one()
-        rows = db.scalars(query.options(joinedload(SaleCredit.notification)).order_by(SaleCredit.created_at, SaleCredit.sale_id).offset(offset).limit(limit)).all()
+        rows = db.scalars(query.options(joinedload(SaleCredit.notification), joinedload(SaleCredit.sale).joinedload(Sale.import_record)).order_by(SaleCredit.created_at, SaleCredit.sale_id).offset(offset).limit(limit)).all()
         return dict(items=[row(c) for c in rows], total_outstanding=total, count=count, offset=offset, limit=limit)
 
     @staticmethod

@@ -5,6 +5,7 @@ feature owns its corresponding SQLAlchemy model definitions.
 """
 
 from app.models.customers import Customer
+from app.models.data_import import DataImport, ImportedSale
 from app.models.medicines import Medicine, StockMovement, StockMovementType
 from app.models.prescriptions import Prescription, PrescriptionStatus
 from app.models.sales import Sale, SaleItem, SaleStatus

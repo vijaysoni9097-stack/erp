@@ -113,8 +113,6 @@ function Login({ onLogin }) {
               {submitting ? 'Signing in…' : 'Sign In'} <i className="fa-solid fa-arrow-right" />
             </button>
           </form>
-
-          <p className="login-default-hint">Sign in with your local pharmacy account. Internet is not required.</p>
         </div>
       </section>
     </main>

@@ -155,7 +155,16 @@ class CompanySnapshotRead(ORMModel):
     gstin: str | None
 
 
+class SaleImportRead(ORMModel):
+    source_reference: str
+    kind: str
+    balance_as_of: datetime
+    paid_before_import: Decimal
+    notes: str | None
+
+
 class SaleRead(ORMModel):
+    import_details: SaleImportRead | None = None
     outstanding_amount: Decimal = Decimal('0')
     paid_amount: Decimal | None = None
     whatsapp_status: str | None = None

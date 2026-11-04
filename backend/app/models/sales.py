@@ -29,8 +29,13 @@ class Sale(Base):
     total_amount: Mapped[Decimal] = mapped_column(Numeric(12, 2))
     created_at: Mapped[datetime] = mapped_column(DateTime(), server_default=func.now())
     company_record: Mapped["SaleCompany | None"] = relationship("SaleCompany", uselist=False, cascade="all, delete-orphan")
+    import_record: Mapped["ImportedSale | None"] = relationship("ImportedSale", uselist=False, cascade="all, delete-orphan")
 
-    credit: Mapped["SaleCredit | None"] = relationship(uselist=False)
+    @property
+    def import_details(self):
+        return self.import_record
+
+    credit: Mapped["SaleCredit | None"] = relationship(uselist=False, back_populates='sale')
 
     @property
     def outstanding_amount(self):
@@ -38,6 +43,8 @@ class Sale(Base):
 
     @property
     def paid_amount(self):
+        if self.import_record:
+            return self.total_amount - self.outstanding_amount if self.status != SaleStatus.voided else Decimal('0')
         return self.total_amount - self.outstanding_amount if self.credit else (self.payment.amount if self.payment else None)
 
     @property

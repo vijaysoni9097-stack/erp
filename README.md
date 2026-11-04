@@ -63,6 +63,10 @@ npm run test:backend
 
 The backend test launcher runs in an isolated temporary directory and database, with no developer `.env` loaded. CI uses the same launcher. A frontend lint command is retained; it requires the native oxlint dependency installed for your machine.
 
+## Migrating existing data
+
+Superadmins can use **Settings → Import Existing Data** to download CSV templates, validate and import suppliers, medicines/current opening stock, customers, historical invoices and opening customer balances. See [the migration guide](docs/data-import.md) for column definitions, import order and balance reconciliation.
+
 ## Build and deploy
 
 ```sh

@@ -1,0 +1,9 @@
+.data-import { min-width: 0; }
+.data-import fieldset { border: 0; padding: 0; min-width: 0; display: grid; gap: 16px; }
+.data-import fieldset > button { justify-self: start; }
+.data-import h3 { font-size: 1.2rem; margin-top: 24px; }
+.data-import .import-table-wrap { max-width: 100%; overflow-x: auto; margin: 16px 0; }
+.data-import table { width: 100%; border-collapse: collapse; font-size: .875rem; }
+.data-import th, .data-import td { padding: 10px; text-align: left; border-bottom: 1px solid #dce3eb; white-space: nowrap; }
+.data-import .import-errors { max-height: 280px; overflow: auto; padding-left: 24px; }
+.data-import .import-errors li { margin-bottom: 8px; }

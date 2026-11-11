@@ -1,0 +1,60 @@
+{
+  "name": "pharma-erp-desktop",
+  "version": "0.1.0",
+  "private": true,
+  "description": "PHARMA ERP desktop application with the existing web interface and local SQLite storage",
+  "author": "PHARMA ERP",
+  "main": "electron/main.cjs",
+  "engines": { "node": ">=22.12.0 <23" },
+  "scripts": {
+    "setup": "node scripts/setup.mjs",
+    "sync:web": "node scripts/sync-web.mjs",
+    "verify:source": "node scripts/verify-source.mjs",
+    "build:ui": "node scripts/build.mjs --ui-only",
+    "build": "node scripts/build.mjs",
+    "start": "node scripts/launch.mjs",
+    "dev": "node scripts/build.mjs --ui-only && node scripts/launch.mjs --development-backend",
+    "test": "node scripts/test.mjs",
+    "test:frozen": "node --test tests/frozen.test.cjs",
+    "test:smoke": "node scripts/launch.mjs --smoke-test",
+    "pack": "npm run build && electron-builder --dir",
+    "dist:mac": "node scripts/distribute.mjs mac",
+    "dist:win": "node scripts/distribute.mjs win"
+  },
+  "devDependencies": {
+    "electron": "45.3.0",
+    "electron-builder": "26.18.0"
+  },
+  "build": {
+    "appId": "com.pharmaerp.desktop",
+    "productName": "PHARMA ERP",
+    "asar": true,
+    "directories": { "output": "release", "buildResources": "resources" },
+    "files": ["electron/**/*", "package.json", "resources/integrations.env.example", "resources/icon.png", "README.md"],
+    "protocols": [{ "name": "PHARMA ERP password recovery", "schemes": ["pharma-erp"] }],
+    "extraResources": [
+      { "from": "build/backend/pharma-erp-api", "to": "backend" },
+      { "from": "build/ui", "to": "ui" },
+      { "from": "build/desktop-guide.html", "to": "desktop-guide.html" }
+    ],
+    "mac": {
+      "category": "public.app-category.business",
+      "target": ["dmg", "zip"],
+      "hardenedRuntime": true,
+      "artifactName": "PHARMA-ERP-${version}-mac-${arch}.${ext}"
+    },
+    "dmg": { "title": "PHARMA ERP ${version}", "writeUpdateInfo": false },
+    "win": {
+      "target": ["nsis"],
+      "artifactName": "PHARMA-ERP-${version}-windows-${arch}-setup.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "deleteAppDataOnUninstall": false,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    }
+  }
+}

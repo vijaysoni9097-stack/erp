@@ -1,0 +1,4 @@
+-r requirements-desktop.txt
+# The copied web regression suite also verifies PostgreSQL engine configuration.
+# No PostgreSQL server is used by desktop operation or these configuration checks.
+psycopg[binary]==3.3.6

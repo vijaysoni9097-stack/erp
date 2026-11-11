@@ -1,0 +1,15 @@
+import assert from 'node:assert/strict';
+import { sellableMedicines, validateDispenseLine } from '../src/services/dispenseValidation.js';
+const now = new Date(2026,9,26,12);
+const medicine = {id:1, name:'Test medicine', batch_number:'B1', expiry_date:'2026-10-26',stock_quantity:5,selling_price:'12.50'};
+const expired = {...medicine,id:2,expiry_date:'2026-10-25'};
+const line = {id:1,quantity:1,discount_percent:0};
+assert.deepEqual(sellableMedicines([expired,medicine,{...medicine,id:3,stock_quantity:0}],now).map(m=>m.id),[1]);
+assert.equal(validateDispenseLine(line,medicine,now),null);
+assert.match(validateDispenseLine(line,expired,now),/expired/);
+assert.match(validateDispenseLine({...line,quantity:6},medicine,now),/Only 5/);
+assert.match(validateDispenseLine({...line,quantity:1.5},medicine,now),/whole quantity/);
+assert.match(validateDispenseLine({...line,discount_percent:'1.234'},medicine,now),/discount/);
+assert.equal(validateDispenseLine({...line,discount_percent:'100'},medicine,now),null);
+assert.match(validateDispenseLine(line,undefined,now),/no longer available/);
+console.log('Dispensing regression checks passed: filter dates, expiry boundary, quantity, discounts and missing stock.');

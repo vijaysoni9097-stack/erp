@@ -1,0 +1,64 @@
+.today-sales-trigger {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  margin: 0 0 24px;
+  padding: 18px 22px;
+  border: 1px solid var(--accent-border);
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+}
+.today-sales-trigger:hover { background: var(--accent-bg); border-color: var(--accent); }
+.today-sales-icon { display: grid; place-items: center; width: 46px; height: 46px; border-radius: 10px; background: var(--accent-bg); color: var(--accent); font-size: 21px; flex-shrink: 0; }
+.today-sales-copy { display: grid; gap: 4px; }
+.today-sales-copy > span { color: var(--text-muted); font-size: 13px; font-weight: 600; }
+.today-sales-copy > strong { color: var(--text-h); font-size: 25px; line-height: 1.2; }
+.today-sales-caption { margin-left: auto; color: var(--accent); font-size: 13px; font-weight: 600; }
+.today-sales-caption i { margin-left: 10px; }
+.today-sales-dialog { width: min(880px, calc(100% - 28px)); max-height: 88vh; overflow-y: auto; padding: 0; border-radius: 12px; box-shadow: 0 24px 70px rgba(22,32,55,.2); }
+.today-sales-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 22px 24px; border-bottom: 1px solid var(--border); }
+.today-sales-eyebrow { margin: 0 0 6px; font-size: 12px; color: var(--text-muted); }
+.today-sales-header h2 { margin: 0; font-size: 22px; font-weight: 700; color: var(--text-h); }
+.today-sales-close { display: grid; place-items: center; width: 36px; height: 36px; padding: 0; color: var(--text-muted); background: var(--surface); cursor: pointer; flex-shrink: 0; }
+.today-sales-close:hover { color: var(--accent); background: var(--accent-bg); }
+.today-sales-state { padding: 36px 24px; color: var(--text-muted); font-size: 14px; }
+.today-sales-state p { margin-bottom: 14px; }
+.today-sales-overview { display: flex; align-items: center; gap: 32px; padding: 22px 24px; background: var(--surface-muted); }
+.today-sales-overview > div { display: grid; gap: 6px; }
+.today-sales-overview span { color: var(--text-muted); font-size: 12px; }
+.today-sales-overview strong { color: var(--text-h); font-size: 22px; }
+.today-sales-refresh { margin-left: auto; font-size: 12px; color: var(--accent); background: var(--surface); cursor: pointer; }
+.today-sales-refresh i { margin-right: 6px; }
+.today-sales-table-wrap { overflow-x: auto; }
+.today-sales-table { width: 100%; min-width: 580px; border-collapse: collapse; font-size: 13px; }
+.today-sales-table th { padding: 13px 20px; background: var(--surface-muted); color: var(--text-muted); font-size: 12px; font-weight: 600; text-align: left; white-space: nowrap; }
+.today-sales-table td { padding: 16px 20px; border-top: 1px solid var(--border); color: var(--text); }
+.today-sales-table td small { display: block; color: var(--text-muted); margin-top: 5px; }
+.today-sales-table .today-sales-number { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.today-sales-invoice-link { padding: 2px 0; background: transparent; border: 0; color: var(--accent); font-size: 13px; font-weight: 700; cursor: pointer; white-space: nowrap; }
+.today-sales-invoice-link i { font-size: 10px; margin-left: 5px; }
+.today-sales-invoice-link:hover { text-decoration: underline; }
+.today-sales-back { margin: 18px 24px; padding: 0; border: 0; color: var(--accent); background: transparent; font-size: 13px; cursor: pointer; }
+.today-sales-back i { margin-right: 6px; }
+.today-sales-invoice-meta { display: flex; flex-wrap: wrap; gap: 12px 24px; padding: 0 24px 20px; color: var(--text-muted); font-size: 12px; }
+.today-sales-invoice-meta strong { color: var(--text); }
+.today-sales-totals { display: grid; gap: 10px; max-width: 430px; margin: 22px 24px 24px auto; padding-left: 24px; font-size: 13px; }
+.today-sales-totals > div { display: flex; justify-content: space-between; gap: 24px; }
+.today-sales-totals dt { color: var(--text-muted); font-weight: 500; }
+.today-sales-totals dd { margin: 0; color: var(--text); font-weight: 600; text-align: right; overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
+.today-sales-totals .today-sales-collected { padding-top: 12px; margin-top: 4px; border-top: 1px solid var(--border); font-size: 17px; }
+.today-sales-collected :is(dt, dd) { color: var(--accent); font-weight: 700; }
+.today-sales-note { margin: 0; padding: 16px 24px; border-top: 1px solid var(--border); background: var(--surface-muted); color: var(--text-muted); font-size: 12px; line-height: 1.6; }
+@media (max-width: 600px) {
+  .today-sales-trigger { gap: 12px; padding: 16px; flex-wrap: wrap; }
+  .today-sales-caption { width: 100%; margin-left: 58px; font-size: 12px; }
+  .today-sales-header { padding: 18px 16px; }
+  .today-sales-overview { gap: 18px; flex-wrap: wrap; padding: 18px 16px; }
+  .today-sales-overview strong { font-size: 20px; }
+  .today-sales-refresh { margin-left: 0; }
+  .today-sales-dialog { max-height: 92dvh; }
+}

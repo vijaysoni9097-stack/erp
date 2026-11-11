@@ -1,0 +1,68 @@
+name: Build PHARMA ERP desktop
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            arch: x64
+            package: dist:win
+          - os: macos-15-intel
+            arch: x64
+            package: dist:mac
+          - os: macos-latest
+            arch: arm64
+            package: dist:mac
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          architecture: ${{ matrix.arch }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          architecture: ${{ matrix.arch }}
+      - name: Find project
+        id: project
+        shell: bash
+        run: |
+          if test -f desktop-app/package.json; then
+            echo "directory=desktop-app" >> "$GITHUB_OUTPUT"
+          else
+            echo "directory=." >> "$GITHUB_OUTPUT"
+          fi
+      - name: Install desktop dependencies
+        working-directory: ${{ steps.project.outputs.directory }}
+        run: npm ci
+      - name: Set up isolated runtime
+        working-directory: ${{ steps.project.outputs.directory }}
+        shell: bash
+        run: ERP_DESKTOP_PYTHON="$(python -c 'import sys; print(sys.executable)')" npm run setup
+      - name: Build UI and test
+        working-directory: ${{ steps.project.outputs.directory }}
+        run: npm run build:ui && npm test
+      - name: Build native installers
+        working-directory: ${{ steps.project.outputs.directory }}
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+        run: npm run ${{ matrix.package }}
+      - name: Verify Electron and frozen backend
+        working-directory: ${{ steps.project.outputs.directory }}
+        run: npm run test:smoke
+      - uses: actions/upload-artifact@v4
+        with:
+          name: PHARMA-ERP-${{ matrix.os }}-${{ matrix.arch }}
+          path: |
+            ${{ steps.project.outputs.directory }}/release/*.dmg
+            ${{ steps.project.outputs.directory }}/release/*.zip
+            ${{ steps.project.outputs.directory }}/release/*.exe
+            ${{ steps.project.outputs.directory }}/release/SHA256SUMS.txt
+            ${{ steps.project.outputs.directory }}/test-output/
+          if-no-files-found: error

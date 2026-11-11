@@ -1,0 +1,14 @@
+node_modules/
+.venv/
+.cache/
+build/
+release/
+test-output/
+*.db
+*.sqlite3
+*.sqlite3-*
+*.spec
+__pycache__/
+*.pyc
+.env
+integrations.env

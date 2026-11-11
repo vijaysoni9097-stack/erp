@@ -1,0 +1,24 @@
+/* Orders uses the dashboard layout. Keep status and table rules local. */
+.orders-page .orders-summary-copy { padding-right: 54px; }
+.orders-page .stat-icon.green, .orders-page .stat-badge.green { background: #4a9b8f; }
+.orders-page .orders-table-actions { display: flex; align-items: center; gap: 10px; }
+.orders-page .orders-table { min-width: 980px; }
+.orders-page .orders-table tbody tr:hover { background: var(--surface-muted); }
+.orders-page .orders-amount { text-align: right; }
+.orders-page :is(.status-pill, .priority-pill) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 24px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+}
+.orders-page :is(.status-pill.pending, .priority-pill.urgent) { color: #a06b00; background: #fff2cc; }
+.orders-page :is(.status-pill.approved, .status-pill.delivered, .priority-pill.low) { color: #197b4f; background: #ddf7e9; }
+.orders-page :is(.status-pill.in-transit, .priority-pill.normal) { color: var(--accent); background: var(--accent-bg); }
+.orders-page :is(.status-pill.rejected, .priority-pill.high) { color: #bd3530; background: #ffe1df; }
+@media (max-width: 620px) {
+  .orders-page .panel-header { gap: 12px; flex-wrap: wrap; padding-block: 14px; }
+}

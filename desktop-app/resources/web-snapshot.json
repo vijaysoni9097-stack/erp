@@ -1,0 +1,8 @@
+{
+  "syncedAt": "2026-11-11T03:58:04.631Z",
+  "source": "../frontend and ../backend",
+  "changes": [
+    "API uses same-origin /api/v1 at build time",
+    "Login background image is bundled locally"
+  ]
+}
